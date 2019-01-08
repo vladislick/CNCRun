@@ -377,7 +377,11 @@ p, li { white-space: pre-wrap; }
        </widget>
       </item>
       <item>
-       <widget class="QTextEdit" name="textEdit"/>
+       <widget class="QTextEdit" name="gcode_edit">
+        <property name="placeholderText">
+         <string>Сюда можно писать G-code вручную</string>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QProgressBar" name="progressBar">

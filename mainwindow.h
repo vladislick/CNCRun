@@ -47,11 +47,15 @@ private:
     int serialAvailable(QSerialPortInfo*);
     ///Обрабатывает открытие файла
     void fileOpen(QString);
+    ///Старт работы станка
+    void start();
 
     //Последовательный порт
     QSerialPort     *comPort;
     QSerialPortInfo *portInfo;
     ConfFile        *conffile;
+    //Главный массив с G-code
+    QString      gcode;
 };
 
 #endif // MAINWINDOW_H

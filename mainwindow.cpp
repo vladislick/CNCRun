@@ -28,7 +28,6 @@ MainWindow::MainWindow(QWidget *parent) :
     comPort->setStopBits(QSerialPort::OneStop);
 
     /* Подключаем сигналы и слоты */
-
 }
 
 ///Отправить текст на консоль вывода
@@ -65,7 +64,8 @@ void MainWindow::fileOpen(QString path) {
     QFile file(path);
     if (path.indexOf(".txt")) {
         if (file.open(QFile::ReadOnly | QFile::Text)) {
-
+            gcode = QString::fromUtf8(file.readAll().toStdString().c_str());
+            ui->gcode_edit->setText(gcode);
         } else {
             QMessageBox box(QMessageBox::Critical, "Невозможно открыть файл", "Не удалось открыть выбранный файл");
             box.exec();
@@ -85,7 +85,7 @@ void MainWindow::on_button_clear_clicked()
 
 void MainWindow::on_button_start_clicked()
 {
-
+    gcode = ui->gcode_edit->toPlainText();
 }
 
 void MainWindow::on_button_com_clicked()
@@ -96,5 +96,11 @@ void MainWindow::on_button_com_clicked()
 void MainWindow::on_action_open_triggered()
 {
     QFileDialog fileDialog;
-    fileOpen(fileDialog.getOpenFileName(this, tr("Открыть"), "", tr("Изображение или G-code (*.jpg *.png *.txt)")));
+    QString str = fileDialog.getOpenFileName(this, tr("Открыть"), "", tr("Изображение или G-code (*.jpg *.png *.txt)"));
+    if (str.size() != 0) fileOpen(str);
+}
+
+///Старт работы станка
+void MainWindow::start() {
+
 }
