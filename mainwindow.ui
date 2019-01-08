@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>811</width>
-    <height>506</height>
+    <width>904</width>
+    <height>578</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -62,7 +62,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="pushButton">
+            <widget class="QPushButton" name="button_com">
              <property name="text">
               <string>Обновить</string>
              </property>
@@ -109,7 +109,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton_5">
+         <widget class="QPushButton" name="button_clear">
           <property name="text">
            <string>Очистить</string>
           </property>
@@ -118,7 +118,7 @@
        </layout>
       </item>
       <item>
-       <widget class="QTextEdit" name="textEdit">
+       <widget class="QTextEdit" name="console">
         <property name="minimumSize">
          <size>
           <width>250</width>
@@ -158,7 +158,7 @@ p, li { white-space: pre-wrap; }
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="lineEdit">
+         <widget class="QLineEdit" name="console_line">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -171,7 +171,7 @@ p, li { white-space: pre-wrap; }
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton_2">
+         <widget class="QPushButton" name="button_send">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -185,7 +185,7 @@ p, li { white-space: pre-wrap; }
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
-         <widget class="QPushButton" name="pushButton_3">
+         <widget class="QPushButton" name="button_start">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -201,7 +201,7 @@ p, li { white-space: pre-wrap; }
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton_4">
+         <widget class="QPushButton" name="button_home">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -232,7 +232,7 @@ p, li { white-space: pre-wrap; }
         <item>
          <layout class="QGridLayout" name="gridLayout_2">
           <item row="0" column="0">
-           <widget class="QPushButton" name="pushButton_6">
+           <widget class="QPushButton" name="button_up">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -248,7 +248,7 @@ p, li { white-space: pre-wrap; }
            </widget>
           </item>
           <item row="1" column="0">
-           <widget class="QPushButton" name="pushButton_8">
+           <widget class="QPushButton" name="button_down">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -284,7 +284,7 @@ p, li { white-space: pre-wrap; }
            <number>0</number>
           </property>
           <item row="2" column="1">
-           <widget class="QPushButton" name="pushButton_9">
+           <widget class="QPushButton" name="button_left">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -306,7 +306,7 @@ p, li { white-space: pre-wrap; }
            </widget>
           </item>
           <item row="1" column="2">
-           <widget class="QPushButton" name="pushButton_7">
+           <widget class="QPushButton" name="button_forward">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -322,7 +322,7 @@ p, li { white-space: pre-wrap; }
            </widget>
           </item>
           <item row="3" column="2">
-           <widget class="QPushButton" name="pushButton_13">
+           <widget class="QPushButton" name="button_backward">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -338,7 +338,7 @@ p, li { white-space: pre-wrap; }
            </widget>
           </item>
           <item row="2" column="3">
-           <widget class="QPushButton" name="pushButton_11">
+           <widget class="QPushButton" name="button_right">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -360,7 +360,46 @@ p, li { white-space: pre-wrap; }
      </layout>
     </item>
     <item>
-     <widget class="QGraphicsView" name="graphicsView"/>
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+       <widget class="QLabel" name="label_4">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>G-code</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QTextEdit" name="textEdit"/>
+      </item>
+      <item>
+       <widget class="QProgressBar" name="progressBar">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="value">
+         <number>0</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>Текущая координата: X0 Y0 Z0</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
@@ -369,7 +408,7 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>811</width>
+     <width>904</width>
      <height>21</height>
     </rect>
    </property>
@@ -378,7 +417,7 @@ p, li { white-space: pre-wrap; }
      <string>Файл</string>
     </property>
     <addaction name="action_open"/>
-    <addaction name="action_close_2"/>
+    <addaction name="action_close"/>
     <addaction name="separator"/>
     <addaction name="action_exit"/>
    </widget>
@@ -392,7 +431,7 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>Справка</string>
     </property>
-    <addaction name="action_about_2"/>
+    <addaction name="action_about"/>
    </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
@@ -404,7 +443,7 @@ p, li { white-space: pre-wrap; }
     <string>Открыть</string>
    </property>
   </action>
-  <action name="action_close_2">
+  <action name="action_close">
    <property name="enabled">
     <bool>false</bool>
    </property>
@@ -422,7 +461,7 @@ p, li { white-space: pre-wrap; }
     <string>Выход</string>
    </property>
   </action>
-  <action name="action_about_2">
+  <action name="action_about">
    <property name="text">
     <string>О программе</string>
    </property>
