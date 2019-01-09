@@ -34,28 +34,37 @@ private slots:
 
     void on_action_open_triggered();
 
+    void on_button_home_clicked();
+
+    void connection_timer();
+
 private:
     Ui::MainWindow *ui;
 
     ///Отправить текст на консоль вывода
-    void consoleWrite(QString, QTextEdit*);
+    void    consoleWrite(QString, QTextEdit*);
     ///Отправить текст в порт
-    short serialWrite(QSerialPort*, const char*, int);
+    short   serialWrite(QSerialPort*, const char*, int);
     ///Обновляет данные о портах
-    void serialUpdate(QSerialPortInfo*, QComboBox*);
+    void    serialUpdate(QSerialPortInfo*, QComboBox*);
     ///Возвращает количество доступных портов
-    int serialAvailable(QSerialPortInfo*);
+    int     serialAvailable(QSerialPortInfo*);
     ///Обрабатывает открытие файла
-    void fileOpen(QString);
-    ///Старт работы станка
-    void start();
+    void    fileOpen(QString);
+    ///Обновляет интерфейс программы
+    void    uiUpdate();
+
+    void    start();
 
     //Последовательный порт
     QSerialPort     *comPort;
     QSerialPortInfo *portInfo;
     ConfFile        *conffile;
     //Главный массив с G-code
-    QString      gcode;
+    QString         g_code;
+    QTimer          *connectionTimer;
+
+    volatile bool connectionTimeout;
 };
 
 #endif // MAINWINDOW_H
