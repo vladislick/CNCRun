@@ -25,10 +25,10 @@ MainWindow::MainWindow(QWidget *parent) :
     comPort->setDataBits(QSerialPort::Data8);
     comPort->setStopBits(QSerialPort::OneStop);
 
-    connectionTimer = new QTimer(this);
+    mainTimer = new QTimer();
 
     /* Подключаем сигналы и слоты */
-    connect(connectionTimer, SIGNAL(timeout()), this, SLOT(connection_timer()));
+    connect(mainTimer, SIGNAL(timeout()), this, SLOT(data_exchange_timer()));
 
     /* Выполняем начальный функционал */
     consoleWrite("Welcome!", ui->console);
@@ -124,68 +124,89 @@ void MainWindow::on_button_clear_clicked()
     ui->console->clear();
 }
 
-void MainWindow::connection_timer() {
-    connectionTimeout = 1;
-}
+void MainWindow::data_exchange_timer() {
+    static int      index = 0;
+    static int      time;
+    static QString  command;
+    static QByteArray data;
+    static bool     issended = 0;
 
-void MainWindow::start() {
-    g_code = ui->gcode_edit->toPlainText();
-    ui->button_start->setText("Остановить");
-    ui->button_home->setEnabled(0);
-    ui->button_up->setEnabled(0);
-    ui->button_down->setEnabled(0);
-    ui->button_forward->setEnabled(0);
-    ui->button_backward->setEnabled(0);
-    ui->button_left->setEnabled(0);
-    ui->button_right->setEnabled(0);
-    ui->console_line->setEnabled(0);
-    ui->button_send->setEnabled(0);
-
-    QString command;
-    QByteArray received = comPort->readAll();
-    received.clear();
-
-    for (int i = 0; i < g_code.length(); i++) {
-       if (g_code[i] == '\n' || i == (g_code.length() - 1)) {
-            if (i == (g_code.length() - 1)) command += g_code[i];
-
-            /* Отправляем команду на станок */
-            if (serialWrite(comPort, command.toStdString().c_str(), command.size() + 1) < 0) {
-                consoleWrite("Connection ERROR [SYSTEM]", ui->console);
-                break;
-            } else consoleWrite("Sended: " + command, ui->console);
-
-            /* Ждём подтверждения выполнения */
-            connectionTimeout = 0;
-            connectionTimer->start(1);
-            while (!connectionTimeout) {
-
+    /* Если уже идёт отправка данных */
+    if (index > 0 && issended) {
+        data = comPort->readAll();
+        if (data != "y") {
+            if (time > 0) {
+                time--;
+                return;
+            } else {
+                mainTimer->stop();
+                consoleWrite("Connection TIMEOUT, Sorry [SYSTEM]", ui->console);
+                on_button_start_clicked();
+                issended = 0;
+                index = 0;
+                return;
             }
-            if (connectionTimeout) {
-                consoleWrite("Connection TIMEOUT [SYSTEM]", ui->console);
-                break;
-            }
-            connectionTimer->stop();
-
-            /* Подготовка к следующей команде */
-            received.clear();
-            command.clear();
-        } else {
-            command += g_code[i];
         }
+    } else comPort->clear(); //Очищаем данные с порта
+
+    /* Если команда уже была отправлена */
+    if (issended) {
+        issended = 0;
+        consoleWrite("OK", ui->console);
     }
 
-    consoleWrite("Comleted!", ui->console);
+    /* Чтение команды из текстового поля */
+    if (g_code[index] == '\n') {
+        /* Отправляем команду */
+        if (serialWrite(comPort, command.toStdString().c_str(), command.length() + 1)) {
+            consoleWrite("Sended: " + command + " [SYSTEM]", ui->console);
+        } else { //Если не удалось отправить команду
+            consoleWrite("Connection BROKEN, Sorry [SYSTEM]", ui->console);
+            on_button_start_clicked();
+            mainTimer->stop();
+            issended = 0;
+            index = 0;
+            return;
+        }
+        issended = 1;
+        time = 1200;
+        command.clear();
+    } else {
+        command += g_code[index];
+    }
+
+    /* Обнуляем index, если прошлись по всем символам */
+    if (index < g_code.length()) index++;
+    else {
+        index = 0;
+        issended = 0;
+        mainTimer->stop();
+        consoleWrite("Completed with no errors! [SYSTEM]", ui->console);
+        on_button_start_clicked();
+    }
 }
 
 void MainWindow::on_button_start_clicked()
 {
-    if (ui->button_start->text() == "Начать") {
-        start();
-    }
-
-    ui->button_start->setText("Начать");
     uiUpdate();
+    if (ui->button_start->text() == "Начать") {
+        g_code = ui->gcode_edit->toPlainText();
+        ui->button_start->setText("Остановить");
+        ui->button_home->setEnabled(0);
+        ui->button_up->setEnabled(0);
+        ui->button_down->setEnabled(0);
+        ui->button_forward->setEnabled(0);
+        ui->button_backward->setEnabled(0);
+        ui->button_left->setEnabled(0);
+        ui->button_right->setEnabled(0);
+        ui->console_line->setEnabled(0);
+        ui->button_send->setEnabled(0);
+        consoleWrite("Project is started! [SYSTEM]", ui->console);
+        mainTimer->start(5);
+    } else {
+        ui->button_start->setText("Начать");
+        uiUpdate();
+    }
 }
 
 void MainWindow::on_button_com_clicked()
@@ -214,6 +235,6 @@ void MainWindow::on_button_home_clicked()
 {
     if (serialWrite(comPort, "G00 X00 Y00 Z130", 17) < 0) {
         uiUpdate();
-        consoleWrite("Connection ERROR [SYSTEM]", ui->console);
-    } else consoleWrite("Moving to HOME [USER]", ui->console);
+        consoleWrite("Connection BROKEN, Sorry [SYSTEM]", ui->console);
+    } else consoleWrite("Moving to HOME position [USER]", ui->console);
 }

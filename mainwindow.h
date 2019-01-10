@@ -36,7 +36,7 @@ private slots:
 
     void on_button_home_clicked();
 
-    void connection_timer();
+    void data_exchange_timer();
 
 private:
     Ui::MainWindow *ui;
@@ -62,9 +62,7 @@ private:
     ConfFile        *conffile;
     //Главный массив с G-code
     QString         g_code;
-    QTimer          *connectionTimer;
-
-    volatile bool connectionTimeout;
+    QTimer          *mainTimer;
 };
 
 #endif // MAINWINDOW_H
