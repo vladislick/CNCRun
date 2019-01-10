@@ -79,12 +79,52 @@ int MainWindow::serialAvailable(QSerialPortInfo* port) {
 ///Обрабатывает открытие файла
 void MainWindow::fileOpen(QString path) {
     QFile file(path);
-    if (path.indexOf(".txt")) {
+
+    /* Если это файл с G-code */
+    if (path.indexOf(".txt") > 0) {
         if (file.open(QFile::ReadOnly | QFile::Text)) {
             g_code = QString::fromUtf8(file.readAll().toStdString().c_str());
             ui->gcode_edit->setText(g_code);
         } else {
             QMessageBox box(QMessageBox::Critical, "Невозможно открыть файл", "Не удалось открыть выбранный файл");
+            box.exec();
+        }
+    }
+    /* Если это картинка */
+    else if (path.indexOf(".png") > 0 || path.indexOf(".jpg") > 0) {
+        QImage img(path);
+        QString filename;
+        QColor pixelColor;
+        bool pixels[240][160];
+        int index;
+
+        /* Получаем имя файла */
+        if (path.lastIndexOf('/') > 0)
+            index = path.lastIndexOf('/'); //Если Unix-система
+        else
+            index = path.lastIndexOf('\\'); //Если Windows
+        filename = path;
+        filename.remove(index);
+
+        if (img.width() == 240 && img.height() == 160) {
+            /* Сканируем по X */
+            for (int x = 0; x < img.width(); x++) {
+                /* Сканируем по Y */
+                for (int y = 0; y < img.height(); y++) {
+                    pixelColor = img.pixelColor(x, y);
+                    if (pixelColor.red() + pixelColor.red() + pixelColor.red() > 381) {
+                        pixels[x][y] = 0; //Если это светлый цвет
+                    } else {
+                        pixels[x][y] = 1; //Если это тёмный цвет
+                    }
+                }
+            }
+
+            /* Генерируем G-code */
+
+
+        } else {
+            QMessageBox box(QMessageBox::Critical, "Изображение не подходит", "Выбранное изображение не подходит для преобразования в G-code\nПожалуйста, выберите изображение с размером 240x160 пикселей");
             box.exec();
         }
     }
@@ -237,4 +277,11 @@ void MainWindow::on_button_home_clicked()
         uiUpdate();
         consoleWrite("Connection BROKEN, Sorry [SYSTEM]", ui->console);
     } else consoleWrite("Moving to HOME position [USER]", ui->console);
+}
+
+void MainWindow::on_action_about_triggered()
+{
+    AboutApp about;
+    about.setModal(true);
+    about.exec();
 }

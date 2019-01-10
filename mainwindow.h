@@ -8,6 +8,7 @@
 #include "conffile.h"
 #include <QTimer>
 #include <QFileDialog>
+#include <QImage>
 #include <QtSerialPort/QSerialPort>
 #include <QtSerialPort/QSerialPortInfo>
 
@@ -37,6 +38,8 @@ private slots:
     void on_button_home_clicked();
 
     void data_exchange_timer();
+
+    void on_action_about_triggered();
 
 private:
     Ui::MainWindow *ui;
