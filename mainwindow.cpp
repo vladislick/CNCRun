@@ -121,8 +121,49 @@ void MainWindow::fileOpen(QString path) {
             }
 
             /* Генерируем G-code */
+            g_code.clear();
+            g_code += "G00 Z170\nG00 X00 Y00\n"; //Встаём на нулевую координату
 
+            bool direction = 1;
+            bool gap_now = 0;
+            int  gap = 0;
 
+            //Проходим по каждой строчке
+            for (int y = 0; y < img.height(); y++) {
+                gap_now = 0;
+                //Если вправо
+                if (direction) {
+                    for (int x = 0; x < img.width(); x++) {
+                        //Если нужно рисовать пиксель
+                        if (pixels[x][y]) {
+                            if (!gap_now) {
+                                gap = x;
+                                gap_now = 1;
+                            }
+                            if (x == (img.width() - 1)) {
+                                g_code += "G00 X" + QString::number(gap) + " Y" + QString::number(y) + '\n';
+                                g_code += "G00 Z130\n";
+                                g_code += "G00 X" + QString::number(x) + '\n';
+                                g_code += "G00 Z170\n";
+                            }
+                        }
+                        //Если рисовать пиксель не нужно
+                        else {
+                            if (gap_now) {
+                                gap_now = 0;
+                                g_code += "G00 X" + QString::number(gap) + " Y" + QString::number(y) + '\n';
+                                g_code += "G00 Z130\n";
+                                g_code += "G00 X" + QString::number(x - 1) + '\n';
+                                g_code += "G00 Z170\n";
+                            }
+                        }
+                    }
+                }
+            }
+
+            g_code += "G00 Z170\n";
+            g_code += "G00 X00 Y160\n";
+            ui->gcode_edit->setText(g_code);
         } else {
             QMessageBox box(QMessageBox::Critical, "Изображение не подходит", "Выбранное изображение не подходит для преобразования в G-code\nПожалуйста, выберите изображение с размером 240x160 пикселей");
             box.exec();
@@ -273,7 +314,7 @@ void MainWindow::on_action_open_triggered()
 
 void MainWindow::on_button_home_clicked()
 {
-    if (serialWrite(comPort, "G00 X00 Y00 Z130", 17) < 0) {
+    if (serialWrite(comPort, "G00 X00 Y00 Z170", 17) < 0) {
         uiUpdate();
         consoleWrite("Connection BROKEN, Sorry [SYSTEM]", ui->console);
     } else consoleWrite("Moving to HOME position [USER]", ui->console);
