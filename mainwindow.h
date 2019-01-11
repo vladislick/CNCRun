@@ -6,6 +6,7 @@
 #include <QComboBox>
 #include <QTextEdit>
 #include "conffile.h"
+#include "gcode.h"
 #include <QTimer>
 #include <QFileDialog>
 #include <QImage>
@@ -64,8 +65,15 @@ private:
     QSerialPortInfo *portInfo;
     ConfFile        *conffile;
     //Главный массив с G-code
-    QString         g_code;
+    GCode           *g_code;
     QTimer          *mainTimer;
+
+    bool projectWorking = 0;
+
+    int xsteps;
+    int ysteps;
+    int step_filling;
+    bool xisgeneral;
 };
 
 #endif // MAINWINDOW_H

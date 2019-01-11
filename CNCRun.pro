@@ -29,13 +29,15 @@ SOURCES += \
         mainwindow.cpp \
     aboutapp.cpp \
     settings.cpp \
-    conffile.cpp
+    conffile.cpp \
+    gcode.cpp
 
 HEADERS += \
         mainwindow.h \
     aboutapp.h \
     settings.h \
-    conffile.h
+    conffile.h \
+    gcode.h
 
 FORMS += \
         mainwindow.ui \

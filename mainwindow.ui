@@ -384,22 +384,22 @@ p, li { white-space: pre-wrap; }
        </widget>
       </item>
       <item>
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>Ход выполнения</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QProgressBar" name="progressBar">
         <property name="enabled">
          <bool>false</bool>
         </property>
         <property name="value">
          <number>0</number>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_5">
-        <property name="text">
-         <string>Текущая координата: X0 Y0 Z0</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
        </widget>
       </item>
@@ -421,7 +421,6 @@ p, li { white-space: pre-wrap; }
      <string>Файл</string>
     </property>
     <addaction name="action_open"/>
-    <addaction name="action_close"/>
     <addaction name="separator"/>
     <addaction name="action_exit"/>
    </widget>

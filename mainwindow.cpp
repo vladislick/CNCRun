@@ -26,6 +26,7 @@ MainWindow::MainWindow(QWidget *parent) :
     comPort->setStopBits(QSerialPort::OneStop);
 
     mainTimer = new QTimer();
+    g_code = new GCode();
 
     /* Подключаем сигналы и слоты */
     connect(mainTimer, SIGNAL(timeout()), this, SLOT(data_exchange_timer()));
@@ -33,6 +34,12 @@ MainWindow::MainWindow(QWidget *parent) :
     /* Выполняем начальный функционал */
     consoleWrite("Welcome!", ui->console);
     uiUpdate();
+
+    /* Указываем базовые значения переменных конфигурации */
+    step_filling = 1;
+    xisgeneral = 0;
+    xsteps = 240;
+    ysteps = 160;
 }
 
 ///Отправить текст на консоль вывода
@@ -83,8 +90,8 @@ void MainWindow::fileOpen(QString path) {
     /* Если это файл с G-code */
     if (path.indexOf(".txt") > 0) {
         if (file.open(QFile::ReadOnly | QFile::Text)) {
-            g_code = QString::fromUtf8(file.readAll().toStdString().c_str());
-            ui->gcode_edit->setText(g_code);
+            *g_code = QString::fromUtf8(file.readAll().toStdString().c_str());
+            ui->gcode_edit->setText(g_code->getString());
         } else {
             QMessageBox box(QMessageBox::Critical, "Невозможно открыть файл", "Не удалось открыть выбранный файл");
             box.exec();
@@ -93,20 +100,12 @@ void MainWindow::fileOpen(QString path) {
     /* Если это картинка */
     else if (path.indexOf(".png") > 0 || path.indexOf(".jpg") > 0) {
         QImage img(path);
-        QString filename;
+        QString gcode_temp;
         QColor pixelColor;
         bool pixels[240][160];
-        int index;
 
-        /* Получаем имя файла */
-        if (path.lastIndexOf('/') > 0)
-            index = path.lastIndexOf('/'); //Если Unix-система
-        else
-            index = path.lastIndexOf('\\'); //Если Windows
-        filename = path;
-        filename.remove(index);
-
-        if (img.width() == 240 && img.height() == 160) {
+        /* Сканируем каждый пиксель картинки */
+        if (img.width() == xsteps && img.height() == ysteps) {
             /* Сканируем по X */
             for (int x = 0; x < img.width(); x++) {
                 /* Сканируем по Y */
@@ -119,72 +118,125 @@ void MainWindow::fileOpen(QString path) {
                     }
                 }
             }
+        } else {
+            QMessageBox box(QMessageBox::Critical, "Изображение не подходит", "Выбранное изображение не подходит для преобразования в G-code (размер должен быть строго 240x160)");
+            box.exec();
+            return;
+        }
 
-            /* Генерируем G-code */
-            g_code.clear();
-            g_code += "G00 Z170\nG00 X00 Y00\n"; //Встаём на нулевую координату
+        /* Генерируем G-code */
+        gcode_temp.clear();
+        gcode_temp += "G00 Z170\nG00 X00 Y00\n"; //Встаём на нулевую координату
 
-            bool direction = 1;
-            bool gap_now = 0;
-            int  gap = 0;
+        bool direction = 1;
+        bool gap_now = 0;
+        int  gap = 0;
+        int  x;
+        int  y;
+        int  _x = -1;
+        int  _y = -1;
 
-            //Проходим по каждой строчке
-            for (int y = 0; y < img.height(); y++) {
-                gap_now = 0;
-                //Если вправо
-                if (direction) {
-                    for (int x = 0; x < img.width(); x++) {
-                        //Если нужно рисовать пиксель
-                        if (pixels[x][y]) {
-                            if (!gap_now) {
-                                gap = x;
-                                gap_now = 1;
-                            }
-                            if (x == (img.width() - 1)) {
-                                g_code += "G00 X" + QString::number(gap) + " Y" + QString::number(y) + '\n';
-                                g_code += "G00 Z130\n";
-                                g_code += "G00 X" + QString::number(x) + '\n';
-                                g_code += "G00 Z170\n";
-                            }
-                        }
-                        //Если рисовать пиксель не нужно
-                        else {
-                            if (gap_now) {
-                                gap_now = 0;
-                                g_code += "G00 X" + QString::number(gap) + " Y" + QString::number(y) + '\n';
-                                g_code += "G00 Z130\n";
-                                g_code += "G00 X" + QString::number(x - 1) + '\n';
-                                g_code += "G00 Z170\n";
-                            }
-                        }
+        if (xisgeneral) {
+            x = -1;
+            y = 0;
+        } else {
+            x = 0;
+            y = -1;
+        }
+
+        if (!xisgeneral) while(x < img.width()) {
+            while (!(y == (img.height() - 1) && direction) && !(y == 0 && !direction)) {
+                //Если вниз
+                if (direction) y++;
+                //Если вверх
+                else y--;
+
+                /* Делим все пиксели в столбце на промежутки и добавляем в G-code */
+                if (pixels[x][y]) {
+                    if (!gap_now) {
+                        gap = y;
+                        gap_now = 1;
                     }
                 }
+                if ((gap_now && !pixels[x][y]) || (y == (img.height() - 1) && direction && pixels[x][y]) || (y == 0 && !direction && pixels[x][y])) {
+                    if (_x != x) {
+                        gcode_temp += "G00 X" + QString::number(x) + '\n';
+                        _x = x;
+                    }
+                    gcode_temp += "G00 Y" + QString::number(gap) + '\n';
+                    gcode_temp += "G00 Z130\n";
+                    if (gap != y) gcode_temp += "G00 Y" + QString::number(y) + '\n';
+                    gcode_temp += "G00 Z170\n";
+                    gap_now = 0;
+                }
             }
+            if (direction) y++;
+            else y--;
+            direction = !direction;
+            x += step_filling;
+        } else while(y < img.height()) {
+            while (!(x == (img.width() - 1) && direction) && !(x == 0 && !direction)) {
+                //Если вправо
+                if (direction) x++;
+                //Если влево
+                else x--;
 
-            g_code += "G00 Z170\n";
-            g_code += "G00 X00 Y160\n";
-            ui->gcode_edit->setText(g_code);
-        } else {
-            QMessageBox box(QMessageBox::Critical, "Изображение не подходит", "Выбранное изображение не подходит для преобразования в G-code\nПожалуйста, выберите изображение с размером 240x160 пикселей");
-            box.exec();
+                /* Делим все пиксели в столбце на промежутки и добавляем в G-code */
+                if (pixels[x][y]) {
+                    if (!gap_now) {
+                        gap = x;
+                        gap_now = 1;
+                    }
+                }
+                if ((gap_now && !pixels[x][y]) || (x == (img.width() - 1) && direction && pixels[x][y]) || (x == 0 && !direction && pixels[x][y])) {
+                    if (_y != y) {
+                        gcode_temp += "G00 Y" + QString::number(y) + '\n';
+                        _y = y;
+                    }
+                    gcode_temp += "G00 X" + QString::number(gap) + '\n';
+                    gcode_temp += "G00 Z130\n";
+                    if (gap != x) gcode_temp += "G00 X" + QString::number(x) + '\n';
+                    gcode_temp += "G00 Z170\n";
+                    gap_now = 0;
+                }
+            }
+            if (direction) x++;
+            else x--;
+            direction = !direction;
+            y += step_filling;
         }
+
+        *g_code = gcode_temp;
+        ui->gcode_edit->setText(g_code->getString());
     }
 }
 
 ///Обновляет интерфейс программы
 void MainWindow::uiUpdate() {
-    bool isOpen = comPort->isOpen();
-    ui->button_start->setEnabled(isOpen);
-    ui->button_home->setEnabled(isOpen);
-    ui->button_up->setEnabled(isOpen);
-    ui->button_down->setEnabled(isOpen);
-    ui->button_forward->setEnabled(isOpen);
-    ui->button_backward->setEnabled(isOpen);
-    ui->button_left->setEnabled(isOpen);
-    ui->button_right->setEnabled(isOpen);
-    ui->console_line->setEnabled(isOpen);
-    ui->button_send->setEnabled(isOpen);
-    if (isOpen) ui->button_com->setText("Отключить");
+    bool isActive = comPort->isOpen();
+    if (projectWorking) isActive = 0;
+
+    ui->button_start->setEnabled(comPort->isOpen());
+    ui->button_home->setEnabled(isActive);
+    ui->button_up->setEnabled(isActive);
+    ui->button_down->setEnabled(isActive);
+    ui->button_forward->setEnabled(isActive);
+    ui->button_backward->setEnabled(isActive);
+    ui->button_left->setEnabled(isActive);
+    ui->button_right->setEnabled(isActive);
+    ui->console_line->setEnabled(isActive);
+    ui->button_send->setEnabled(isActive);
+    ui->gcode_edit->setReadOnly(projectWorking);
+    ui->progressBar->setEnabled(projectWorking);
+
+    if (projectWorking) {
+        ui->button_start->setText("Остановить");
+    } else {
+        ui->button_start->setText("Начать");
+        ui->progressBar->setValue(0);
+    }
+
+    if (comPort->isOpen()) ui->button_com->setText("Отключить");
     else {
         serialUpdate(portInfo, ui->comboBox);
         if (serialAvailable(portInfo)) {
@@ -206,88 +258,83 @@ void MainWindow::on_button_clear_clicked()
 }
 
 void MainWindow::data_exchange_timer() {
-    static int      index = 0;
-    static int      time;
-    static QString  command;
-    static QByteArray data;
-    static bool     issended = 0;
+    static int i = 0;
+    static int time = 0;
+    QByteArray data;
 
-    /* Если уже идёт отправка данных */
-    if (index > 0 && issended) {
-        data = comPort->readAll();
-        if (data != "y") {
-            if (time > 0) {
-                time--;
-                return;
-            } else {
-                mainTimer->stop();
-                consoleWrite("Connection TIMEOUT, Sorry [SYSTEM]", ui->console);
-                on_button_start_clicked();
-                issended = 0;
-                index = 0;
-                return;
-            }
-        }
-    } else comPort->clear(); //Очищаем данные с порта
-
-    /* Если команда уже была отправлена */
-    if (issended) {
-        issended = 0;
-        consoleWrite("OK", ui->console);
+    /* Если работа завершена аварийно */
+    if (!projectWorking) {
+        consoleWrite("\n[PROJECT STOPPED]\n", ui->console);
+        time = i = 0;
+        mainTimer->stop();
+        uiUpdate();
+        return;
     }
 
-    /* Чтение команды из текстового поля */
-    if (g_code[index] == '\n') {
-        /* Отправляем команду */
-        if (serialWrite(comPort, command.toStdString().c_str(), command.length() + 1)) {
-            consoleWrite("Sended: " + command + " [SYSTEM]", ui->console);
-        } else { //Если не удалось отправить команду
-            consoleWrite("Connection BROKEN, Sorry [SYSTEM]", ui->console);
-            on_button_start_clicked();
-            mainTimer->stop();
-            issended = 0;
-            index = 0;
+    /* Если ждём ответа от станка */
+    if (time > 0) {
+        data = comPort->readAll();
+        //Если ответ пришёл
+        if (data == "y") {
+            time = 0;
             return;
         }
-        issended = 1;
-        time = 1200;
-        command.clear();
-    } else {
-        command += g_code[index];
+        time--;
+        if (time == 0) time = -1;
+        return;
+    }
+    /* Если не дождались ответа */
+    else if (time < 0) {
+        consoleWrite("No answer from CNC, Sorry [SYSTEM]", ui->console);
+        projectWorking = 0;
+        return;
     }
 
-    /* Обнуляем index, если прошлись по всем символам */
-    if (index < g_code.length()) index++;
+    /* Отправляем команду */
+    if (serialWrite(comPort, g_code->getCommand(i).toStdString().c_str(), g_code->getCommand(i).length() + 1) < 0) {
+        consoleWrite("Connection BROKEN, Sorry [SYSTEM]", ui->console);
+        projectWorking = 0;
+        return;
+    } else {
+        data = comPort->readAll();
+        consoleWrite("Sended: " + g_code->getCommand(i), ui->console);
+        time = 1200;
+    }
+
+    /* Показываем статистику */
+    ui->progressBar->setValue((i + 1) * 100 / g_code->size());
+
+    /* Если все команды были успешно завершены */
+    if (i < (g_code->size() - 1)) i++;
     else {
-        index = 0;
-        issended = 0;
+        consoleWrite("\n[PROJECT COMPLETED]\n", ui->console);
+        projectWorking = 0;
         mainTimer->stop();
-        consoleWrite("Completed with no errors! [SYSTEM]", ui->console);
-        on_button_start_clicked();
+        time = i = 0;
+        uiUpdate();
     }
 }
 
 void MainWindow::on_button_start_clicked()
 {
-    uiUpdate();
     if (ui->button_start->text() == "Начать") {
-        g_code = ui->gcode_edit->toPlainText();
-        ui->button_start->setText("Остановить");
-        ui->button_home->setEnabled(0);
-        ui->button_up->setEnabled(0);
-        ui->button_down->setEnabled(0);
-        ui->button_forward->setEnabled(0);
-        ui->button_backward->setEnabled(0);
-        ui->button_left->setEnabled(0);
-        ui->button_right->setEnabled(0);
-        ui->console_line->setEnabled(0);
-        ui->button_send->setEnabled(0);
-        consoleWrite("Project is started! [SYSTEM]", ui->console);
-        mainTimer->start(5);
+        *g_code = ui->gcode_edit->toPlainText();
+        g_code->generate();
+
+        if (g_code->size() == 0) {
+            consoleWrite("G-code field is empty! [SYSTEM]", ui->console);
+            return;
+        }
+
+        projectWorking = 1;
+
+        consoleWrite("\n[PROJECT STARTED]\n", ui->console);
+
+        mainTimer->start(2);
     } else {
-        ui->button_start->setText("Начать");
-        uiUpdate();
+        projectWorking = 0;
     }
+    uiUpdate();
 }
 
 void MainWindow::on_button_com_clicked()
