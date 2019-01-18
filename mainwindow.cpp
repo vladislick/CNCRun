@@ -36,10 +36,12 @@ MainWindow::MainWindow(QWidget *parent) :
     uiUpdate();
 
     /* Указываем базовые значения переменных конфигурации */
-    step_filling = 1;
+    step_filling = 2;
     xisgeneral = 0;
     xsteps = 240;
     ysteps = 160;
+    zmin = 150;
+    zmax = 180;
 }
 
 ///Отправить текст на консоль вывода
@@ -218,12 +220,6 @@ void MainWindow::uiUpdate() {
 
     ui->button_start->setEnabled(comPort->isOpen());
     ui->button_home->setEnabled(isActive);
-    ui->button_up->setEnabled(isActive);
-    ui->button_down->setEnabled(isActive);
-    ui->button_forward->setEnabled(isActive);
-    ui->button_backward->setEnabled(isActive);
-    ui->button_left->setEnabled(isActive);
-    ui->button_right->setEnabled(isActive);
     ui->console_line->setEnabled(isActive);
     ui->button_send->setEnabled(isActive);
     ui->gcode_edit->setReadOnly(projectWorking);
@@ -297,7 +293,7 @@ void MainWindow::data_exchange_timer() {
         return;
     } else {
         data = comPort->readAll();
-        consoleWrite("Sended: " + g_code->getCommand(i), ui->console);
+        consoleWrite("Sent: " + g_code->getCommand(i), ui->console);
         time = 1200;
     }
 
@@ -372,4 +368,22 @@ void MainWindow::on_action_about_triggered()
     AboutApp about;
     about.setModal(true);
     about.exec();
+}
+
+void MainWindow::on_console_line_returnPressed()
+{
+    if (ui->console_line->text().isEmpty()) return;
+    if (serialWrite(comPort, ui->console_line->text().toStdString().c_str(), ui->console_line->text().length() + 1) < 0) {
+        uiUpdate();
+        consoleWrite("Connection BROKEN, Sorry [SYSTEM]", ui->console);
+    } else consoleWrite("Sent: " + ui->console_line->text() + " [USER]", ui->console);
+}
+
+void MainWindow::on_button_send_clicked()
+{
+    if (ui->console_line->text().isEmpty()) return;
+    if (serialWrite(comPort, ui->console_line->text().toStdString().c_str(), ui->console_line->text().length() + 1) < 0) {
+        uiUpdate();
+        consoleWrite("Connection BROKEN, Sorry [SYSTEM]", ui->console);
+    } else consoleWrite("Sent: " + ui->console_line->text() + " [USER]", ui->console);
 }

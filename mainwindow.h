@@ -42,6 +42,10 @@ private slots:
 
     void on_action_about_triggered();
 
+    void on_console_line_returnPressed();
+
+    void on_button_send_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -72,6 +76,8 @@ private:
 
     int xsteps;
     int ysteps;
+    int zmin;
+    int zmax;
     int step_filling;
     bool xisgeneral;
 };
