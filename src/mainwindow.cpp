@@ -1,6 +1,6 @@
-#include "mainwindow.h"
-#include "aboutapp.h"
-#include "settings.h"
+#include "lib/mainwindow.h"
+#include "lib/aboutapp.h"
+#include "lib/settings.h"
 #include "ui_mainwindow.h"
 
 MainWindow::~MainWindow()

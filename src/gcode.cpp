@@ -1,4 +1,4 @@
-#include "gcode.h"
+#include "lib/gcode.h"
 
 GCode::GCode()
 {

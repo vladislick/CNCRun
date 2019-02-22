@@ -1,4 +1,4 @@
-#include "conffile.h"
+#include "lib/conffile.h"
 
 ConfFile::ConfFile(const QString& filePath)
 {

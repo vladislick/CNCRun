@@ -1,6 +1,7 @@
 #-------------------------------------------------
 #
 # Project created by QtCreator 2018-12-22T20:29:19
+# Author: Vdovin Vladislav @vladislick
 #
 #-------------------------------------------------
 
@@ -25,24 +26,24 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
-        main.cpp \
-        mainwindow.cpp \
-    aboutapp.cpp \
-    settings.cpp \
-    conffile.cpp \
-    gcode.cpp
+        src/main.cpp \
+        src/mainwindow.cpp \
+        src/aboutapp.cpp \
+        src/settings.cpp \
+        src/conffile.cpp \
+        src/gcode.cpp
 
 HEADERS += \
-        mainwindow.h \
-    aboutapp.h \
-    settings.h \
-    conffile.h \
-    gcode.h
+        lib/mainwindow.h \
+        lib/aboutapp.h \
+        lib/settings.h \
+        lib/conffile.h \
+        lib/gcode.h
 
 FORMS += \
-        mainwindow.ui \
-    aboutapp.ui \
-    settings.ui
+        ui/mainwindow.ui \
+        ui/aboutapp.ui \
+        ui/settings.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
