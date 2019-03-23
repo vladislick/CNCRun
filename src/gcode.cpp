@@ -38,7 +38,6 @@ int GCode::generate() {
             while(str_temp.lastIndexOf(' ') == (str_temp.length() - 1)) {
                 str_temp.remove((str_temp.length() - 1), 1);
             }
-            /* Делаем проверку */
 
             /* Добавляем команду */
             gcode_list += str_temp;

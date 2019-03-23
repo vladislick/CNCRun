@@ -2,7 +2,8 @@
 #define SETTINGS_H
 
 #include <QDialog>
-#include "conffile.h"
+#include <QString>
+#include "config.h"
 #include <QMessageBox>
 
 namespace Ui {
@@ -20,9 +21,11 @@ public:
 private slots:
     void on_pushButton_2_clicked();
 
+    void on_pushButton_clicked();
+
 private:
-    Ui::Settings *ui;
-    ConfFile     *file;
+    Ui::Settings    *ui;
+    Config          *config;
 };
 
 #endif // SETTINGS_H

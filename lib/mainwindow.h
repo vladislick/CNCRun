@@ -5,7 +5,7 @@
 #include <QMessageBox>
 #include <QComboBox>
 #include <QTextEdit>
-#include "conffile.h"
+#include "config.h"
 #include "gcode.h"
 #include <QTimer>
 #include <QFileDialog>
@@ -46,6 +46,8 @@ private slots:
 
     void on_button_send_clicked();
 
+    void on_action_settings_triggered();
+
 private:
     Ui::MainWindow *ui;
 
@@ -67,7 +69,7 @@ private:
     //Последовательный порт
     QSerialPort     *comPort;
     QSerialPortInfo *portInfo;
-    ConfFile        *conffile;
+    Config          *config;
     //Главный массив с G-code
     GCode           *g_code;
     QTimer          *mainTimer;

@@ -31,14 +31,16 @@ SOURCES += \
         src/aboutapp.cpp \
         src/settings.cpp \
         src/conffile.cpp \
-        src/gcode.cpp
+        src/gcode.cpp \
+        src/config.cpp
 
 HEADERS += \
         lib/mainwindow.h \
         lib/aboutapp.h \
         lib/settings.h \
         lib/conffile.h \
-        lib/gcode.h
+        lib/gcode.h \
+        lib/config.h
 
 FORMS += \
         ui/mainwindow.ui \

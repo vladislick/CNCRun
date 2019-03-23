@@ -14,8 +14,6 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    conffile = new ConfFile("settings.conf");
-
     /* Определяем последовательный порт */
     comPort = new QSerialPort();
     portInfo = new QSerialPortInfo();
@@ -32,16 +30,19 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(mainTimer, SIGNAL(timeout()), this, SLOT(data_exchange_timer()));
 
     /* Выполняем начальный функционал */
-    consoleWrite("Welcome!", ui->console);
+    consoleWrite("<<<<< WELCOME TO CNCRUN >>>>>", ui->console);
     uiUpdate();
 
+    /* Разбиремся с файлом конфигурации */
+    config = new Config("settings.conf");
+
     /* Указываем базовые значения переменных конфигурации */
-    step_filling = 2;
-    xisgeneral = 0;
-    xsteps = 240;
-    ysteps = 160;
-    zmin = 150;
-    zmax = 180;
+    step_filling    = 1;
+    xisgeneral      = 1;
+    xsteps          = 240;
+    ysteps          = 160;
+    zmin            = 30;
+    zmax            = 40;
 }
 
 ///Отправить текст на консоль вывода
@@ -126,9 +127,28 @@ void MainWindow::fileOpen(QString path) {
             return;
         }
 
+        /* Проверяем, есть ли файл конфигурации */
+        if (!config->isexist()) {
+            config->make("");
+            consoleWrite("NEW CONFIG FILE WAS CREATED", ui->console);
+        }
+        config->read();
+
+        /* Указываем новые значения по файлу конфигурации */
+        for (int i = 0; i < config->count(); i++) {
+            if (config->parameter(i) == "step_filling") step_filling = config->value(i).toInt();
+            else if (config->parameter(i) == "main_axis") {
+                if (config->value(i) == "x") xisgeneral = 1;
+                else xisgeneral = 0;
+            } else if (config->parameter(i) == "axisx_max") xsteps = config->value(i).toInt();
+            else if (config->parameter(i) == "axisy_max") ysteps = config->value(i).toInt();
+            else if (config->parameter(i) == "axisz_down") zmin = config->value(i).toInt();
+            else if (config->parameter(i) == "axisz_up") zmax = config->value(i).toInt();
+        }
+
         /* Генерируем G-code */
         gcode_temp.clear();
-        gcode_temp += "G00 Z170\nG00 X00 Y00\n"; //Встаём на нулевую координату
+        gcode_temp += "G00 Z" + QString::number(zmax) + "\nG00 X00 Y00\n"; //Встаём на нулевую координату
 
         bool direction = 1;
         bool gap_now = 0;
@@ -166,9 +186,9 @@ void MainWindow::fileOpen(QString path) {
                         _x = x;
                     }
                     gcode_temp += "G00 Y" + QString::number(gap) + '\n';
-                    gcode_temp += "G00 Z130\n";
+                    gcode_temp += "G00 Z" + QString::number(zmin) + "\n";
                     if (gap != y) gcode_temp += "G00 Y" + QString::number(y) + '\n';
-                    gcode_temp += "G00 Z170\n";
+                    gcode_temp += "G00 Z" + QString::number(zmax) + "\n";
                     gap_now = 0;
                 }
             }
@@ -196,9 +216,9 @@ void MainWindow::fileOpen(QString path) {
                         _y = y;
                     }
                     gcode_temp += "G00 X" + QString::number(gap) + '\n';
-                    gcode_temp += "G00 Z130\n";
+                    gcode_temp += "G00 Z" + QString::number(zmin) + "\n";
                     if (gap != x) gcode_temp += "G00 X" + QString::number(x) + '\n';
-                    gcode_temp += "G00 Z170\n";
+                    gcode_temp += "G00 Z" + QString::number(zmax) + "\n";
                     gap_now = 0;
                 }
             }
@@ -209,7 +229,7 @@ void MainWindow::fileOpen(QString path) {
         }
 
         *g_code = gcode_temp;
-        ui->gcode_edit->setText(g_code->getString());
+        ui->gcode_edit->setText(gcode_temp);
     }
 }
 
@@ -294,7 +314,7 @@ void MainWindow::data_exchange_timer() {
     } else {
         data = comPort->readAll();
         consoleWrite("Sent: " + g_code->getCommand(i), ui->console);
-        time = 1200;
+        time = 5000;
     }
 
     /* Показываем статистику */
@@ -386,4 +406,11 @@ void MainWindow::on_button_send_clicked()
         uiUpdate();
         consoleWrite("Connection BROKEN, Sorry [SYSTEM]", ui->console);
     } else consoleWrite("Sent: " + ui->console_line->text() + " [USER]", ui->console);
+}
+
+void MainWindow::on_action_settings_triggered()
+{
+    Settings settings;
+    settings.setModal(true);
+    settings.exec();
 }
