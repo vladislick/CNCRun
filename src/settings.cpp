@@ -32,6 +32,17 @@ Settings::Settings(QWidget *parent) :
             else if (config->value(i) == "2") ui->comboBox_6->setCurrentIndex(1);
             else if (config->value(i) == "3") ui->comboBox_6->setCurrentIndex(2);
             else if (config->value(i) == "4") ui->comboBox_6->setCurrentIndex(3);
+        } else if (config->parameter(i) == "baud_rate") {
+            if (config->value(i) == "9600") ui->comboBox->setCurrentIndex(0);
+            else if (config->value(i) == "4800") ui->comboBox->setCurrentIndex(1);
+            else if (config->value(i) == "2400") ui->comboBox->setCurrentIndex(2);
+            else if (config->value(i) == "1200") ui->comboBox->setCurrentIndex(3);
+        } else if (config->parameter(i) == "parity") {
+            if (config->value(i) == "no") ui->comboBox_2->setCurrentIndex(0);
+            else  ui->comboBox_2->setCurrentIndex(1);
+        } else if (config->parameter(i) == "stop_bits") {
+            if (config->value(i) == "1") ui->comboBox_3->setCurrentIndex(0);
+            else ui->comboBox_3->setCurrentIndex(1);
         }
     }
 }

@@ -14,6 +14,9 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    /* Разбиремся с файлом конфигурации */
+    config = new Config("settings.conf");
+
     /* Определяем последовательный порт */
     comPort = new QSerialPort();
     portInfo = new QSerialPortInfo();
@@ -23,8 +26,10 @@ MainWindow::MainWindow(QWidget *parent) :
     comPort->setDataBits(QSerialPort::Data8);
     comPort->setStopBits(QSerialPort::OneStop);
 
-    mainTimer = new QTimer();
-    g_code = new GCode();
+    mainTimer   = new QTimer();
+    g_code      = new GCode();
+    scene       = new QGraphicsScene();
+    ui->graphicsView->setScene(scene);
 
     /* Подключаем сигналы и слоты */
     connect(mainTimer, SIGNAL(timeout()), this, SLOT(data_exchange_timer()));
@@ -32,9 +37,6 @@ MainWindow::MainWindow(QWidget *parent) :
     /* Выполняем начальный функционал */
     consoleWrite("<<<<< WELCOME TO CNCRUN >>>>>", ui->console);
     uiUpdate();
-
-    /* Разбиремся с файлом конфигурации */
-    config = new Config("settings.conf");
 
     /* Указываем базовые значения переменных конфигурации */
     step_filling    = 1;
@@ -245,6 +247,7 @@ void MainWindow::uiUpdate() {
     ui->gcode_edit->setReadOnly(projectWorking);
     ui->progressBar->setEnabled(projectWorking);
 
+
     if (projectWorking) {
         ui->button_start->setText("Остановить");
     } else {
@@ -260,6 +263,113 @@ void MainWindow::uiUpdate() {
         } else {
             ui->button_com->setText("Обновить");
         }
+    }
+}
+
+///Рисует картинку предпросмотра
+void    MainWindow::previewRender(QString gcode, QGraphicsScene* graphicsscene, int width, int height, bool scaling = 0, int line_exec = 0) {
+    //Определяем масштабирование
+    double dpi = graphicsscene->width()  / (width + 2);
+
+    //Если включено соотношение 1:1
+    double scale = 2;
+    bool   widthisbigger = 0; //Больше ли ширина рабочей зоны её длины
+    if (scaling) {
+        if (height > width) {
+            scale = (double)height / (double)width;
+            width = height;
+        }
+        else {
+            widthisbigger = 1;
+            scale = (double)width / (double)height;
+            height = width;
+        }
+    }
+
+    //Доп. настройка
+    QPen pen;
+    pen.setWidth(dpi + 2);
+    int dy = (graphicsscene->height() - (double)height * dpi) / 2;
+
+    graphicsscene->clear();
+
+    /* Читаем каждую команду и отрисовывем картинку с учётом масштабирования */
+    QString tmp; tmp.clear();
+    int     currentx = 0, currenty = 0, currentz = 0; //Текущие координаты
+    int     value[4];   //Значение каждого параметра G-code (G, X, Y, Z)
+    bool    exist[4];   //Был ли указан параметр (G, X, Y, Z)
+    short   index = 0;      //К какому параметру относится значение (при чтении строки)
+    int     z_min = 1000;
+    int     z_max = 0;
+    int     str_num = 0;
+
+    for (int i = 0; i < gcode.length(); i++) {
+        //Берём одну конкретную строчку
+        if (gcode[i] == '\n') {
+            exist[0] = exist[1] = exist[2] = exist[3] = 0;
+            //Читаем строчку
+            for (int a = 0; a < tmp.length(); a++) {
+                if (tmp[a] == 'G') {
+                    exist[0] = 1;
+                    value[0] = 0;
+                    index = 0;
+                } else if (tmp[a] == 'X') {
+                    exist[1] = 1;
+                    value[1] = 0;
+                    index = 1;
+                } else if (tmp[a] == 'Y') {
+                    exist[2] = 1;
+                    value[2] = 0;
+                    index = 2;
+                } else if (tmp[a] == 'Z') {
+                    exist[3] = 1;
+                    value[3] = 0;
+                    index = 3;
+                } else if (tmp[a] > 47 && tmp[a] < 58) {
+                    value[index] = (value[index] * 10) + (tmp.toUtf8().at(a) - 48);
+                }
+            }
+
+            //Отрисовываем линию
+            if (exist[0]) {
+                //Меняем цвет
+                if (str_num > line_exec) pen.setColor(QColor(0, 0, 0));
+                else pen.setColor(QColor(0, 200, 0));
+
+                //Если была указана ось Z
+                if (exist[3]) {
+                    currentz = value[3];
+                    if (currentz < z_min && z_max > 0) z_min = currentz;
+                    if (currentz > z_max) z_max = currentz;
+                }
+                //Если была указана ось X
+                if (exist[1]) {
+                    if (currentz == z_min) {
+                        if (!scaling) graphicsscene->addLine(currentx * dpi, currenty * dpi + dy, value[1] * dpi, currenty * dpi + dy, pen);
+                        else {
+                            if (widthisbigger) graphicsscene->addLine(currentx * dpi, currenty * dpi * scale + dy, value[1] * dpi, currenty * dpi * scale + dy, pen);
+                            else graphicsscene->addLine(currentx * scale * dpi, currenty * dpi + dy, value[1] * dpi, currenty * scale * dpi + dy, pen);
+                        }
+                    }
+                    currentx = value[1];
+                }
+
+                //Если была указана ось Y
+                if (exist[2]) {
+                    if (currentz == z_min) {
+                        if (!scaling) graphicsscene->addLine(currentx * dpi, currenty * dpi + dy, currentx * dpi, value[2] * dpi + dy, pen);
+                        else {
+                            if (widthisbigger) graphicsscene->addLine(currentx * dpi, currenty * dpi * scale + dy, currentx * dpi, value[2] * dpi * scale + dy, pen);
+                            else graphicsscene->addLine(currentx * scale * dpi, currenty * dpi * scale + dy, currentx * scale * dpi, value[2] * dpi * scale + dy, pen);
+                        }
+                    }
+                    currenty = value[2];
+                }
+            }
+
+            str_num++;
+            tmp.clear();
+        } else tmp += gcode.at(i);
     }
 }
 
@@ -320,6 +430,11 @@ void MainWindow::data_exchange_timer() {
     /* Показываем статистику */
     ui->progressBar->setValue((i + 1) * 100 / g_code->size());
 
+    //Обновляем размеры графической сцены
+    scene->setSceneRect(0, 0, ui->graphicsView->width(), ui->graphicsView->height());
+    //Показываем картинку
+    previewRender(g_code->getString(), scene, xsteps, ysteps, previewscaling, i);
+
     /* Если все команды были успешно завершены */
     if (i < (g_code->size() - 1)) i++;
     else {
@@ -356,6 +471,26 @@ void MainWindow::on_button_start_clicked()
 void MainWindow::on_button_com_clicked()
 {
     if (ui->button_com->text() == "Подключить") {
+
+        /* Проверяем, есть ли файл конфигурации */
+        if (!config->isexist()) {
+            config->make("");
+            consoleWrite("NEW CONFIG FILE WAS CREATED", ui->console);
+        }
+        config->read();
+
+        /* Указываем новые значения по файлу конфигурации */
+        for (int i = 0; i < config->count(); i++) {
+            if (config->parameter(i) == "baud_rate") comPort->setBaudRate(config->value(i).toInt());
+            else if (config->parameter(i) == "parity") {
+                if (config->value(i) == "no") comPort->setParity(QSerialPort::NoParity);
+                else comPort->setParity(QSerialPort::EvenParity);
+            } else if (config->parameter(i) == "stop_bits") {
+                if (config->value(i) == "1") comPort->setStopBits(QSerialPort::OneStop);
+                else comPort->setStopBits(QSerialPort::TwoStop);
+            }
+        }
+
         comPort->setPortName(ui->comboBox->currentText());
         if (comPort->open(QIODevice::ReadWrite)) {
             consoleWrite("Connected to " + ui->comboBox->currentText() + " [SYSTEM]", ui->console);
@@ -413,4 +548,27 @@ void MainWindow::on_action_settings_triggered()
     Settings settings;
     settings.setModal(true);
     settings.exec();
+}
+
+void MainWindow::on_gcode_edit_textChanged()
+{
+    //Копируем текст с G-code
+    QString str = ui->gcode_edit->toPlainText();
+
+    //Обновляем размеры графической сцены
+    scene->setSceneRect(0, 0, ui->graphicsView->width(), ui->graphicsView->height());
+
+    //Подсчитываем количество строк
+    int numofcom = 0;
+    for (int i = 0; i < str.length(); i++) if (str.at(i) == '\n') numofcom++;
+    ui->label_8->setText(QString::number(numofcom));
+
+    //Показываем картинку
+    previewRender(str, scene, xsteps, ysteps, previewscaling);
+}
+
+void MainWindow::on_checkBox_stateChanged(int arg)
+{
+    previewscaling = arg;
+    if (!projectWorking) on_gcode_edit_textChanged();
 }

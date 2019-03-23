@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QGraphicsScene>
+#include <QGraphicsView>
 #include <QMessageBox>
 #include <QComboBox>
 #include <QTextEdit>
@@ -48,6 +50,10 @@ private slots:
 
     void on_action_settings_triggered();
 
+    void on_gcode_edit_textChanged();
+
+    void on_checkBox_stateChanged(int arg1);
+
 private:
     Ui::MainWindow *ui;
 
@@ -63,8 +69,10 @@ private:
     void    fileOpen(QString);
     ///Обновляет интерфейс программы
     void    uiUpdate();
-
+    ///Начать выполнение G-code
     void    start();
+    ///Рисует картинку предпросмотра
+    void    previewRender(QString, QGraphicsScene*, int, int, bool, int);
 
     //Последовательный порт
     QSerialPort     *comPort;
@@ -73,7 +81,9 @@ private:
     //Главный массив с G-code
     GCode           *g_code;
     QTimer          *mainTimer;
+    QGraphicsScene  *scene;
 
+    bool previewscaling = 0;
     bool projectWorking = 0;
 
     int xsteps;
