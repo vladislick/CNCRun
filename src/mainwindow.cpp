@@ -109,26 +109,6 @@ void MainWindow::fileOpen(QString path) {
         QColor pixelColor;
         bool pixels[240][160];
 
-        /* Сканируем каждый пиксель картинки */
-        if (img.width() == xsteps && img.height() == ysteps) {
-            /* Сканируем по X */
-            for (int x = 0; x < img.width(); x++) {
-                /* Сканируем по Y */
-                for (int y = 0; y < img.height(); y++) {
-                    pixelColor = img.pixelColor(x, y);
-                    if (pixelColor.red() + pixelColor.red() + pixelColor.red() > 381) {
-                        pixels[x][y] = 0; //Если это светлый цвет
-                    } else {
-                        pixels[x][y] = 1; //Если это тёмный цвет
-                    }
-                }
-            }
-        } else {
-            QMessageBox box(QMessageBox::Critical, "Изображение не подходит", "Выбранное изображение не подходит для преобразования в G-code (размер должен быть строго 240x160)");
-            box.exec();
-            return;
-        }
-
         /* Проверяем, есть ли файл конфигурации */
         if (!config->isexist()) {
             config->make("");
@@ -146,6 +126,30 @@ void MainWindow::fileOpen(QString path) {
             else if (config->parameter(i) == "axisy_max") ysteps = config->value(i).toInt();
             else if (config->parameter(i) == "axisz_down") zmin = config->value(i).toInt();
             else if (config->parameter(i) == "axisz_up") zmax = config->value(i).toInt();
+        }
+
+        /* Сканируем каждый пиксель картинки */
+        if (img.width() == xsteps && img.height() == ysteps) {
+            /* Сканируем по X */
+            for (int x = 0; x < img.width(); x++) {
+                /* Сканируем по Y */
+                for (int y = 0; y < img.height(); y++) {
+                    pixelColor = img.pixelColor(x, y);
+                    if (pixelColor.red() + pixelColor.red() + pixelColor.red() > 381) {
+                        pixels[x][y] = 0; //Если это светлый цвет
+                    } else {
+                        pixels[x][y] = 1; //Если это тёмный цвет
+                    }
+                }
+            }
+        } else {
+            QString str = "Выбранное изображение не подходит для преобразования в G-code (размер должен быть строго ";
+            str += QString::number(xsteps) + "x" + QString::number(ysteps) + ")\n\n";
+            str += "Ваше изображение имеет разрешение " + QString::number(img.width()) + "x" + QString::number(img.height());
+
+            QMessageBox box(QMessageBox::Critical, "Изображение не подходит", str);
+            box.exec();
+            return;
         }
 
         /* Генерируем G-code */
@@ -288,7 +292,7 @@ void    MainWindow::previewRender(QString gcode, QGraphicsScene* graphicsscene, 
 
     //Доп. настройка
     QPen pen;
-    pen.setWidth(dpi + 2);
+    pen.setWidth(dpi + 1 + scaling);
     int dy = (graphicsscene->height() - (double)height * dpi) / 2;
 
     graphicsscene->clear();
@@ -512,7 +516,8 @@ void MainWindow::on_action_open_triggered()
 
 void MainWindow::on_button_home_clicked()
 {
-    if (serialWrite(comPort, "G00 X00 Y00 Z170", 17) < 0) {
+    QString str = "G00 X00 Y00 Z" + QString::number(zmax);
+    if (serialWrite(comPort, str.toStdString().c_str(), 17) < 0) {
         uiUpdate();
         consoleWrite("Connection BROKEN, Sorry [SYSTEM]", ui->console);
     } else consoleWrite("Moving to HOME position [USER]", ui->console);
