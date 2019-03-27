@@ -7,7 +7,8 @@ https://drive.google.com/file/d/1zxxtkqWHxbLzOg10FOEduCY-Zvrjjy_A/view?usp=shari
 ## On Windows
 Unzip CNCRun.zip to any directory and run executable file CNCRun.exe
 
-##On Linux
+## On Linux
 Unzip CNCRun.zip to any directory then go to the unzipped directory and run this commands:
-    chmod +x install.sh
-    sudo ./install.sh
+        
+        chmod +x install.sh
+        sudo ./install.sh
