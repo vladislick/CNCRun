@@ -1,6 +1,8 @@
 # CNCRun
 Qt Application for control my homemade CNC
 
+![project image](https://github.com/vladislick/cnc_run_qt/master/images/general.png)
+
 ## Download
 https://drive.google.com/file/d/1zxxtkqWHxbLzOg10FOEduCY-Zvrjjy_A/view?usp=sharing
 
