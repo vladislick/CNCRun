@@ -19,6 +19,10 @@
   <property name="windowTitle">
    <string>CNCRun</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../icons/128x128/cncrun.png</normaloff>../icons/128x128/cncrun.png</iconset>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout_3">
     <item>
