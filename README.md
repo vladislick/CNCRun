@@ -1,4 +1,4 @@
-# cnc_run_qt
+# CNCRun
 Qt Application for control my homemade CNC
 
 ## Download
