@@ -41,9 +41,9 @@ MainWindow::MainWindow(QWidget *parent) :
     /* Указываем базовые значения переменных конфигурации */
     step_filling    = 1;
     xisgeneral      = 1;
-    xsteps          = 240;
-    ysteps          = 160;
-    zmin            = 30;
+    xsteps          = 239;
+    ysteps          = 159;
+    zmin            = 35;
     zmax            = 40;
 }
 
@@ -107,7 +107,10 @@ void MainWindow::fileOpen(QString path) {
         QImage img(path);
         QString gcode_temp;
         QColor pixelColor;
-        bool pixels[240][160];
+
+        /* Создаём динамический массив пикселей */
+        bool **pixels = new bool*[img.width()];
+        for (int i = 0; i < img.width(); i++) pixels[i] = new bool[img.height()];
 
         /* Проверяем, есть ли файл конфигурации */
         if (!config->isexist()) {
@@ -129,7 +132,7 @@ void MainWindow::fileOpen(QString path) {
         }
 
         /* Сканируем каждый пиксель картинки */
-        if (img.width() == xsteps && img.height() == ysteps) {
+        if (img.width() == (xsteps + 1) && img.height() == (ysteps + 1)) {
             /* Сканируем по X */
             for (int x = 0; x < img.width(); x++) {
                 /* Сканируем по Y */
@@ -144,7 +147,7 @@ void MainWindow::fileOpen(QString path) {
             }
         } else {
             QString str = "Выбранное изображение не подходит для преобразования в G-code (размер должен быть строго ";
-            str += QString::number(xsteps) + "x" + QString::number(ysteps) + ")\n\n";
+            str += QString::number(xsteps + 1) + "x" + QString::number(ysteps + 1) + ")\n\n";
             str += "Ваше изображение имеет разрешение " + QString::number(img.width()) + "x" + QString::number(img.height());
 
             QMessageBox box(QMessageBox::Critical, "Изображение не подходит", str);
@@ -193,7 +196,13 @@ void MainWindow::fileOpen(QString path) {
                     }
                     gcode_temp += "G00 Y" + QString::number(gap) + '\n';
                     gcode_temp += "G00 Z" + QString::number(zmin) + "\n";
-                    if (gap != y) gcode_temp += "G00 Y" + QString::number(y) + '\n';
+                    if (gap != y) {
+                        if (pixels[x][y]) {
+                            gcode_temp += "G00 Y" + QString::number(y) + '\n';
+                        } else {
+                            gcode_temp += "G00 Y" + QString::number(y + 1 - (2 * direction)) + '\n';
+                        }
+                    }
                     gcode_temp += "G00 Z" + QString::number(zmax) + "\n";
                     gap_now = 0;
                 }
@@ -223,7 +232,13 @@ void MainWindow::fileOpen(QString path) {
                     }
                     gcode_temp += "G00 X" + QString::number(gap) + '\n';
                     gcode_temp += "G00 Z" + QString::number(zmin) + "\n";
-                    if (gap != x) gcode_temp += "G00 X" + QString::number(x) + '\n';
+                    if (gap != x) {
+                        if (pixels[x][y]) {
+                            gcode_temp += "G00 X" + QString::number(x) + '\n';
+                        } else {
+                            gcode_temp += "G00 X" + QString::number(x + 1 - (2 * direction)) + '\n';
+                        }
+                    }
                     gcode_temp += "G00 Z" + QString::number(zmax) + "\n";
                     gap_now = 0;
                 }
@@ -233,6 +248,10 @@ void MainWindow::fileOpen(QString path) {
             direction = !direction;
             y += step_filling;
         }
+
+        /* Удаляем динамический массив пикселей */
+        for (int i = 0; i < img.width(); i++) delete[] pixels[i];
+        delete[] pixels;
 
         *g_code = gcode_temp;
         ui->gcode_edit->setText(gcode_temp);
@@ -561,7 +580,7 @@ void MainWindow::on_gcode_edit_textChanged()
     QString str = ui->gcode_edit->toPlainText();
 
     //Обновляем размеры графической сцены
-    scene->setSceneRect(0, 0, ui->graphicsView->width(), ui->graphicsView->height());
+    scene->setSceneRect(-3, -3, ui->graphicsView->width() - 6, ui->graphicsView->height() - 6);
 
     //Подсчитываем количество строк
     int numofcom = 0;
@@ -569,7 +588,7 @@ void MainWindow::on_gcode_edit_textChanged()
     ui->label_8->setText(QString::number(numofcom));
 
     //Показываем картинку
-    previewRender(str, scene, xsteps, ysteps, previewscaling);
+    previewRender(str, scene, xsteps + 1, ysteps + 1, previewscaling);
 }
 
 void MainWindow::on_checkBox_stateChanged(int arg)
