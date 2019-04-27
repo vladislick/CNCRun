@@ -6,6 +6,19 @@ AboutApp::AboutApp(QWidget *parent) :
     ui(new Ui::AboutApp)
 {
     ui->setupUi(this);
+
+    /* Выводим логотип */
+    scene = new QGraphicsScene;
+    imageLogo = new QPixmap("cncrun.png");
+    scene->addPixmap(*imageLogo);
+    ui->logo->setScene(scene);
+
+    /* Выводим ссылку проекта */
+    ui->labelLink->setText("<a href=\"https://github.com/vladislick/cnc_run_qt\">https://github.com/vladislick/cnc_run_qt</a>");
+    ui->labelLink->setOpenExternalLinks(true);
+
+    /* Выводим версию приложения */
+    ui->appVersion->setText(APPVERSION);
 }
 
 AboutApp::~AboutApp()

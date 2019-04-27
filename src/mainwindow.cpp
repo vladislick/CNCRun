@@ -29,22 +29,33 @@ MainWindow::MainWindow(QWidget *parent) :
     mainTimer   = new QTimer();
     g_code      = new GCode();
     scene       = new QGraphicsScene();
+    ui->graphicsView->setBackgroundBrush(QBrush(QColor(255, 255, 255, 255)));
     ui->graphicsView->setScene(scene);
 
     /* Подключаем сигналы и слоты */
     connect(mainTimer, SIGNAL(timeout()), this, SLOT(data_exchange_timer()));
 
     /* Выполняем начальный функционал */
-    consoleWrite("<<<<< WELCOME TO CNCRUN >>>>>", ui->console);
+    this->setWindowIcon(QIcon("cncrun.png"));
+    consoleWrite("******** WELCOME TO CNCRUN ********", ui->console);
     uiUpdate();
+
+    /* Проверяем наличие конфигурационного файла */
+    if (!config->isexist()) {
+        consoleWrite("No configuration file [SYSTEM]", ui->console);
+        consoleWrite("File created automatically but you have to configure your CNC machine manually is settings menu [SYSTEM]", ui->console);
+        config->make("");
+    }
 
     /* Указываем базовые значения переменных конфигурации */
     step_filling    = 1;
     xisgeneral      = 1;
-    xsteps          = 239;
-    ysteps          = 159;
-    zmin            = 35;
+    xsteps          = 100;
+    ysteps          = 100;
+    zmin            = 30;
     zmax            = 40;
+    changeaxis      = 0;
+    dirchange       = 0;
 }
 
 ///Отправить текст на консоль вывода
@@ -108,7 +119,8 @@ void MainWindow::fileOpen(QString path) {
         QString gcode_temp;
         QColor pixelColor;
 
-        /* Создаём динамический массив пикселей */
+        /* Создаём динамический массив     connect(mainTimer, SIGNAL(timeout()), this, SLOT(data_exchange_timer()));
+пикселей */
         bool **pixels = new bool*[img.width()];
         for (int i = 0; i < img.width(); i++) pixels[i] = new bool[img.height()];
 
@@ -129,6 +141,14 @@ void MainWindow::fileOpen(QString path) {
             else if (config->parameter(i) == "axisy_max") ysteps = config->value(i).toInt();
             else if (config->parameter(i) == "axisz_down") zmin = config->value(i).toInt();
             else if (config->parameter(i) == "axisz_up") zmax = config->value(i).toInt();
+            else if (config->parameter(i) == "changeaxis") {
+                if (config->value(i) == "true" || config->value(i) == "1") changeaxis = 1;
+                else changeaxis = 0;
+            }
+            else if (config->parameter(i) == "dirchange") {
+                if (config->value(i) == "true" || config->value(i) == "1") dirchange = 1;
+                else dirchange = 0;
+            }
         }
 
         /* Сканируем каждый пиксель картинки */
@@ -146,8 +166,8 @@ void MainWindow::fileOpen(QString path) {
                 }
             }
         } else {
-            QString str = "Выбранное изображение не подходит для преобразования в G-code (размер должен быть строго ";
-            str += QString::number(xsteps + 1) + "x" + QString::number(ysteps + 1) + ")\n\n";
+            QString str = "Выбранное изображение не подходит для преобразования в G-code\nРазмер должен быть строго ";
+            str += QString::number(xsteps + 1) + "x" + QString::number(ysteps + 1) + "\n\n";
             str += "Ваше изображение имеет разрешение " + QString::number(img.width()) + "x" + QString::number(img.height());
 
             QMessageBox box(QMessageBox::Critical, "Изображение не подходит", str);
@@ -167,15 +187,18 @@ void MainWindow::fileOpen(QString path) {
         int  _x = -1;
         int  _y = -1;
 
+        //Если основная ось - X
         if (xisgeneral) {
+            y = 0 + (ysteps * changeaxis);
             x = -1;
-            y = 0;
-        } else {
-            x = 0;
+        }
+        //Если основная ось - Y
+        else {
+            x = 0 + (xsteps * changeaxis);
             y = -1;
         }
 
-        if (!xisgeneral) while(x < img.width()) {
+        if (!xisgeneral) while((x < img.width() && !changeaxis) || (x >= 0 && changeaxis)) { // *** Пока не дошли до крайних координат ***
             while (!(y == (img.height() - 1) && direction) && !(y == 0 && !direction)) {
                 //Если вниз
                 if (direction) y++;
@@ -190,10 +213,12 @@ void MainWindow::fileOpen(QString path) {
                     }
                 }
                 if ((gap_now && !pixels[x][y]) || (y == (img.height() - 1) && direction && pixels[x][y]) || (y == 0 && !direction && pixels[x][y])) {
+                    //Если изменился 'x'
                     if (_x != x) {
                         gcode_temp += "G00 X" + QString::number(x) + '\n';
                         _x = x;
                     }
+
                     gcode_temp += "G00 Y" + QString::number(gap) + '\n';
                     gcode_temp += "G00 Z" + QString::number(zmin) + "\n";
                     if (gap != y) {
@@ -207,11 +232,24 @@ void MainWindow::fileOpen(QString path) {
                     gap_now = 0;
                 }
             }
-            if (direction) y++;
-            else y--;
-            direction = !direction;
-            x += step_filling;
-        } else while(y < img.height()) {
+
+            //Если нужно менять направление
+            if (dirchange == true) {
+                if (direction) y++;
+                else y--;
+                direction = !direction;
+            }
+            //Если направление не меняем, то просто обнуляем 'y'
+            else {
+                y = -1;
+            }
+
+            //Сдвигаемся на один столбец
+            if (changeaxis)
+                x -= step_filling;
+            else
+                x += step_filling;
+        } else while((y < img.height() && !changeaxis) || (y >= 0 && changeaxis)) { // *** Пока не дошли до крайних координат ***
             while (!(x == (img.width() - 1) && direction) && !(x == 0 && !direction)) {
                 //Если вправо
                 if (direction) x++;
@@ -226,10 +264,12 @@ void MainWindow::fileOpen(QString path) {
                     }
                 }
                 if ((gap_now && !pixels[x][y]) || (x == (img.width() - 1) && direction && pixels[x][y]) || (x == 0 && !direction && pixels[x][y])) {
+                    //Если изменился 'y'
                     if (_y != y) {
                         gcode_temp += "G00 Y" + QString::number(y) + '\n';
                         _y = y;
                     }
+
                     gcode_temp += "G00 X" + QString::number(gap) + '\n';
                     gcode_temp += "G00 Z" + QString::number(zmin) + "\n";
                     if (gap != x) {
@@ -243,10 +283,23 @@ void MainWindow::fileOpen(QString path) {
                     gap_now = 0;
                 }
             }
-            if (direction) x++;
-            else x--;
-            direction = !direction;
-            y += step_filling;
+
+            //Если нужно менять направление
+            if (dirchange == true) {
+                if (direction) x++;
+                else x--;
+                direction = !direction;
+            }
+            //Если направление не меняем, то просто обнуляем 'x'
+            else {
+                x = -1;
+            }
+
+            //Сдвигаемся на одну строчку
+            if (changeaxis)
+                y -= step_filling;
+            else
+                y += step_filling;
         }
 
         /* Удаляем динамический массив пикселей */
@@ -356,8 +409,11 @@ void    MainWindow::previewRender(QString gcode, QGraphicsScene* graphicsscene, 
             //Отрисовываем линию
             if (exist[0]) {
                 //Меняем цвет
-                if (str_num > line_exec) pen.setColor(QColor(0, 0, 0));
-                else pen.setColor(QColor(0, 200, 0));
+                if (str_num > line_exec)
+                    pen.setColor(QColor(70, 70, 70));
+                else
+                    pen.setColor(QColor(42, 170, 203));
+
 
                 //Если была указана ось Z
                 if (exist[3]) {
@@ -528,6 +584,12 @@ void MainWindow::on_button_com_clicked()
 
 void MainWindow::on_action_open_triggered()
 {
+    //Если уже идёт выполнение проекта
+    if (projectWorking) {
+        consoleWrite("Project is already running, ABORTED [SYSTEM]", ui->console);
+        return;
+    }
+
     QFileDialog fileDialog;
     QString str = fileDialog.getOpenFileName(this, tr("Открыть"), "", tr("Изображение или G-code (*.jpg *.png *.txt)"));
     if (str.size() != 0) fileOpen(str);

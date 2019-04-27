@@ -43,6 +43,12 @@ Settings::Settings(QWidget *parent) :
         } else if (config->parameter(i) == "stop_bits") {
             if (config->value(i) == "1") ui->comboBox_3->setCurrentIndex(0);
             else ui->comboBox_3->setCurrentIndex(1);
+        } else if (config->parameter(i) == "changeaxis") {
+            if (config->value(i) == "true" || config->value(i) == "1") ui->checkBox->setChecked(1);
+            else ui->checkBox->setChecked(0);
+        } else if (config->parameter(i) == "dirchange") {
+            if (config->value(i) == "true" || config->value(i) == "1") ui->checkBox_2->setChecked(1);
+            else ui->checkBox_2->setChecked(0);
         }
     }
 }
@@ -106,6 +112,22 @@ void Settings::on_pushButton_clicked()
 
     //Указываем значение Z для поднятого инструмента
     str += "axisz_up    = " + QString::number(ui->spinBox_4->value()) + "        //Значение Z для поднятого инструмента\n";
+
+    //Указываем нужно ли изменить направление сканирования
+    str += "changeaxis  = ";
+    if (ui->checkBox->isChecked()) {
+        str += "true      //Изменить направление сканирования\n";
+    } else {
+        str += "false     //Изменить направление сканирования\n";
+    }
+
+    //Указываем нужно ли менять направление сканирования
+    str += "dirchange   = ";
+    if (ui->checkBox_2->isChecked()) {
+        str += "true      //Менять направление сканирования";
+    } else {
+        str += "false     //Менять направление сканирования";
+    }
 
     //Пересоздаём файл конфигурации
     config->make(str);

@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QGraphicsScene>
+#include <QGuiApplication>
 #include <QGraphicsView>
 #include <QMessageBox>
 #include <QComboBox>
@@ -10,6 +11,7 @@
 #include "config.h"
 #include "gcode.h"
 #include <QTimer>
+#include <QtGui>
 #include <QFileDialog>
 #include <QImage>
 #include <QtSerialPort/QSerialPort>
@@ -92,6 +94,8 @@ private:
     int zmax;
     int step_filling;
     bool xisgeneral;
+    bool changeaxis;
+    bool dirchange;
 };
 
 #endif // MAINWINDOW_H

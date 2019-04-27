@@ -2,6 +2,11 @@
 #define ABOUTAPP_H
 
 #include <QDialog>
+#include <QPixmap>
+#include <QGraphicsView>
+#include <QGraphicsScene>
+
+#define APPVERSION "1.2"
 
 namespace Ui {
 class AboutApp;
@@ -19,7 +24,9 @@ private slots:
     void on_pushButton_clicked();
 
 private:
-    Ui::AboutApp *ui;
+    Ui::AboutApp    *ui;
+    QGraphicsScene  *scene;
+    QPixmap         *imageLogo;
 };
 
 #endif // ABOUTAPP_H
