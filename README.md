@@ -8,7 +8,7 @@ Qt Application for control my homemade CNC
 Releases: https://github.com/vladislick/cnc_run_qt/releases/
 
 ### System requirements
-- Windows 7 32-bit or newer
+- Windows 7 or newer
 - Ubuntu 16.04 or newer (Arch is supported too)
 
 ### On Windows
