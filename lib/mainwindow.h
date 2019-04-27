@@ -44,6 +44,8 @@ private slots:
 
     void data_exchange_timer();
 
+    void preview_update_timer();
+
     void on_action_about_triggered();
 
     void on_console_line_returnPressed();
@@ -83,9 +85,10 @@ private:
     //Главный массив с G-code
     GCode           *g_code;
     QTimer          *mainTimer;
+    QTimer          *previewTimer;
     QGraphicsScene  *scene;
 
-    bool previewscaling = 0;
+    bool previewscaling = 1;
     bool projectWorking = 0;
 
     int xsteps;

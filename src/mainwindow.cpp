@@ -26,17 +26,19 @@ MainWindow::MainWindow(QWidget *parent) :
     comPort->setDataBits(QSerialPort::Data8);
     comPort->setStopBits(QSerialPort::OneStop);
 
-    mainTimer   = new QTimer();
-    g_code      = new GCode();
-    scene       = new QGraphicsScene();
+    mainTimer       = new QTimer();
+    previewTimer    = new QTimer();
+    g_code          = new GCode();
+    scene           = new QGraphicsScene();
     ui->graphicsView->setBackgroundBrush(QBrush(QColor(255, 255, 255, 255)));
     ui->graphicsView->setScene(scene);
 
     /* Подключаем сигналы и слоты */
     connect(mainTimer, SIGNAL(timeout()), this, SLOT(data_exchange_timer()));
+    connect(previewTimer, SIGNAL(timeout()), this, SLOT(preview_update_timer()));
+    previewTimer->start(700);
 
     /* Выполняем начальный функционал */
-    this->setWindowIcon(QIcon("cncrun.png"));
     consoleWrite("******** WELCOME TO CNCRUN ********", ui->console);
     uiUpdate();
 
@@ -56,6 +58,13 @@ MainWindow::MainWindow(QWidget *parent) :
     zmax            = 40;
     changeaxis      = 0;
     dirchange       = 0;
+
+    /* Указываем иконки */
+    this->setWindowIcon(QIcon("cncrun.png"));
+    ui->action_open->setIcon(QIcon("icons/fileopen.png"));
+    ui->action_exit->setIcon(QIcon("icons/exit.png"));
+    ui->action_settings->setIcon(QIcon("icons/settings.png"));
+    ui->action_about->setIcon(QIcon("icons/about.png"));
 }
 
 ///Отправить текст на консоль вывода
@@ -103,6 +112,33 @@ int MainWindow::serialAvailable(QSerialPortInfo* port) {
 void MainWindow::fileOpen(QString path) {
     QFile file(path);
 
+    /* Проверяем, есть ли файл конфигурации */
+    if (!config->isexist()) {
+        config->make("");
+        consoleWrite("NEW CONFIG FILE WAS CREATED", ui->console);
+    }
+    config->read();
+
+    /* Указываем новые значения по файлу конфигурации */
+    for (int i = 0; i < config->count(); i++) {
+        if (config->parameter(i) == "step_filling") step_filling = config->value(i).toInt();
+        else if (config->parameter(i) == "main_axis") {
+            if (config->value(i) == "x") xisgeneral = 1;
+            else xisgeneral = 0;
+        } else if (config->parameter(i) == "axisx_max") xsteps = config->value(i).toInt();
+        else if (config->parameter(i) == "axisy_max") ysteps = config->value(i).toInt();
+        else if (config->parameter(i) == "axisz_down") zmin = config->value(i).toInt();
+        else if (config->parameter(i) == "axisz_up") zmax = config->value(i).toInt();
+        else if (config->parameter(i) == "changeaxis") {
+            if (config->value(i) == "true" || config->value(i) == "1") changeaxis = 1;
+            else changeaxis = 0;
+        }
+        else if (config->parameter(i) == "dirchange") {
+            if (config->value(i) == "true" || config->value(i) == "1") dirchange = 1;
+            else dirchange = 0;
+        }
+    }
+
     /* Если это файл с G-code */
     if (path.indexOf(".txt") > 0) {
         if (file.open(QFile::ReadOnly | QFile::Text)) {
@@ -119,37 +155,9 @@ void MainWindow::fileOpen(QString path) {
         QString gcode_temp;
         QColor pixelColor;
 
-        /* Создаём динамический массив     connect(mainTimer, SIGNAL(timeout()), this, SLOT(data_exchange_timer()));
-пикселей */
+        /* Создаём динамический массив пикселей */
         bool **pixels = new bool*[img.width()];
         for (int i = 0; i < img.width(); i++) pixels[i] = new bool[img.height()];
-
-        /* Проверяем, есть ли файл конфигурации */
-        if (!config->isexist()) {
-            config->make("");
-            consoleWrite("NEW CONFIG FILE WAS CREATED", ui->console);
-        }
-        config->read();
-
-        /* Указываем новые значения по файлу конфигурации */
-        for (int i = 0; i < config->count(); i++) {
-            if (config->parameter(i) == "step_filling") step_filling = config->value(i).toInt();
-            else if (config->parameter(i) == "main_axis") {
-                if (config->value(i) == "x") xisgeneral = 1;
-                else xisgeneral = 0;
-            } else if (config->parameter(i) == "axisx_max") xsteps = config->value(i).toInt();
-            else if (config->parameter(i) == "axisy_max") ysteps = config->value(i).toInt();
-            else if (config->parameter(i) == "axisz_down") zmin = config->value(i).toInt();
-            else if (config->parameter(i) == "axisz_up") zmax = config->value(i).toInt();
-            else if (config->parameter(i) == "changeaxis") {
-                if (config->value(i) == "true" || config->value(i) == "1") changeaxis = 1;
-                else changeaxis = 0;
-            }
-            else if (config->parameter(i) == "dirchange") {
-                if (config->value(i) == "true" || config->value(i) == "1") dirchange = 1;
-                else dirchange = 0;
-            }
-        }
 
         /* Сканируем каждый пиксель картинки */
         if (img.width() == (xsteps + 1) && img.height() == (ysteps + 1)) {
@@ -323,7 +331,6 @@ void MainWindow::uiUpdate() {
     ui->gcode_edit->setReadOnly(projectWorking);
     ui->progressBar->setEnabled(projectWorking);
 
-
     if (projectWorking) {
         ui->button_start->setText("Остановить");
     } else {
@@ -462,6 +469,10 @@ void MainWindow::on_button_clear_clicked()
     ui->console->clear();
 }
 
+void MainWindow::preview_update_timer() {
+    if (!projectWorking) on_gcode_edit_textChanged();
+}
+
 void MainWindow::data_exchange_timer() {
     static int i = 0;
     static int time = 0;
@@ -512,7 +523,7 @@ void MainWindow::data_exchange_timer() {
     //Обновляем размеры графической сцены
     scene->setSceneRect(0, 0, ui->graphicsView->width(), ui->graphicsView->height());
     //Показываем картинку
-    previewRender(g_code->getString(), scene, xsteps, ysteps, previewscaling, i);
+    previewRender(g_code->getString(), scene, xsteps + 1, ysteps + 1, previewscaling, i);
 
     /* Если все команды были успешно завершены */
     if (i < (g_code->size() - 1)) i++;

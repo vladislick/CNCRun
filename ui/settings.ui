@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>407</width>
+    <width>422</width>
     <height>498</height>
    </rect>
   </property>
@@ -425,6 +425,9 @@
        </property>
        <property name="text">
         <string>Применить</string>
+       </property>
+       <property name="default">
+        <bool>true</bool>
        </property>
        <property name="flat">
         <bool>false</bool>

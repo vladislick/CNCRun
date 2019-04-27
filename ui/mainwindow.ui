@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1080</width>
-    <height>611</height>
+    <width>1111</width>
+    <height>628</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -70,11 +70,11 @@
             <widget class="QLabel" name="label_2">
              <property name="font">
               <font>
-               <pointsize>10</pointsize>
+               <pointsize>9</pointsize>
               </font>
              </property>
              <property name="text">
-              <string>Порт</string>
+              <string>Устройство</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignCenter</set>
@@ -222,19 +222,6 @@ p, li { white-space: pre-wrap; }
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
-         <spacer name="horizontalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
          <widget class="QPushButton" name="button_start">
           <property name="enabled">
            <bool>false</bool>
@@ -248,7 +235,26 @@ p, li { white-space: pre-wrap; }
           <property name="text">
            <string>Начать</string>
           </property>
+          <property name="autoDefault">
+           <bool>true</bool>
+          </property>
+          <property name="default">
+           <bool>true</bool>
+          </property>
          </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_6">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
         </item>
         <item>
          <widget class="QPushButton" name="button_home">
@@ -265,19 +271,6 @@ p, li { white-space: pre-wrap; }
            <string>Домой</string>
           </property>
          </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_6">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
         </item>
        </layout>
       </item>
@@ -373,6 +366,9 @@ p, li { white-space: pre-wrap; }
           <property name="text">
            <string>Адаптировать под 1:1</string>
           </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
          </widget>
         </item>
        </layout>
@@ -426,6 +422,9 @@ p, li { white-space: pre-wrap; }
         <property name="value">
          <number>0</number>
         </property>
+        <property name="textVisible">
+         <bool>true</bool>
+        </property>
        </widget>
       </item>
      </layout>
@@ -437,7 +436,7 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1080</width>
+     <width>1111</width>
      <height>21</height>
     </rect>
    </property>
@@ -468,30 +467,43 @@ p, li { white-space: pre-wrap; }
   <widget class="QStatusBar" name="statusBar"/>
   <action name="action_open">
    <property name="text">
-    <string>- Открыть</string>
+    <string>Открыть</string>
    </property>
-  </action>
-  <action name="action_close">
-   <property name="enabled">
-    <bool>false</bool>
+   <property name="toolTip">
+    <string>Открыть</string>
    </property>
-   <property name="text">
-    <string>Закрыть</string>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
    </property>
   </action>
   <action name="action_settings">
    <property name="text">
-    <string>- Установки</string>
+    <string>Установки</string>
+   </property>
+   <property name="toolTip">
+    <string>Установки</string>
    </property>
   </action>
   <action name="action_exit">
    <property name="text">
-    <string>- Выход</string>
+    <string>Выход</string>
+   </property>
+   <property name="toolTip">
+    <string>Выход</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
    </property>
   </action>
   <action name="action_about">
    <property name="text">
-    <string>- О программе</string>
+    <string>О программе</string>
+   </property>
+   <property name="toolTip">
+    <string>О программе</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+I</string>
    </property>
   </action>
  </widget>

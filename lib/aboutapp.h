@@ -6,7 +6,7 @@
 #include <QGraphicsView>
 #include <QGraphicsScene>
 
-#define APPVERSION "1.2"
+#define APPVERSION "1.2.1"
 
 namespace Ui {
 class AboutApp;
@@ -25,7 +25,6 @@ private slots:
 
 private:
     Ui::AboutApp    *ui;
-    QGraphicsScene  *scene;
     QPixmap         *imageLogo;
 };
 
