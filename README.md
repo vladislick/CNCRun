@@ -11,11 +11,14 @@ Releases: https://github.com/vladislick/cnc_run_qt/releases/
 - Windows 7 or newer
 - Ubuntu 16.04 or newer (Arch is supported too)
 
-### On Windows
-Unzip CNCRun_Windows.zip to any directory, go to uzipped folder, then run executable file CNCRun.exe
+### How to install on Windows
+Unzip CNCRun_Windows.zip, then run CNCRunSetup.exe.
+Follow the instructions in app
 
-### On Linux
-Unzip CNCRun_Linux.zip to any directory, go to unzipped directory, then run this commands:
+### How to install on Linux
+Unzip CNCRun_Linux.zip, go to unzipped directory, then run this commands:
         
         chmod +x install.sh
         sudo ./install.sh
+        
+Follow the instructions in script
