@@ -9,7 +9,7 @@ Releases: https://github.com/vladislick/cnc_run_qt/releases/
 
 ### System requirements
 - Windows 7 or newer
-- Ubuntu 16.04 or newer (Arch is supported too)
+- Ubuntu 16.04 or newer (Arch Linux is supported too)
 
 ### How to install on Windows
 Unzip CNCRun_Windows.zip, then run CNCRunSetup.exe.
