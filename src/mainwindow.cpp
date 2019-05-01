@@ -29,14 +29,17 @@ MainWindow::MainWindow(QWidget *parent) :
     mainTimer       = new QTimer();
     previewTimer    = new QTimer();
     g_code          = new GCode();
+    penColor        = new QColor();
+    penColorLight   = new QColor();
     scene           = new QGraphicsScene();
-    ui->graphicsView->setBackgroundBrush(QBrush(QColor(255, 255, 255, 255)));
     ui->graphicsView->setScene(scene);
+
 
     /* Подключаем сигналы и слоты */
     connect(mainTimer, SIGNAL(timeout()), this, SLOT(data_exchange_timer()));
     connect(previewTimer, SIGNAL(timeout()), this, SLOT(preview_update_timer()));
-    previewTimer->start(700);
+
+    previewTimer->start(200);
 
     /* Выполняем начальный функционал */
     consoleWrite("******** WELCOME TO CNCRUN ********", ui->console);
@@ -329,6 +332,7 @@ void MainWindow::uiUpdate() {
     ui->console_line->setEnabled(isActive);
     ui->button_send->setEnabled(isActive);
     ui->gcode_edit->setReadOnly(projectWorking);
+    ui->progressLabel->setEnabled(projectWorking);
     ui->progressBar->setEnabled(projectWorking);
 
     if (projectWorking) {
@@ -417,10 +421,9 @@ void    MainWindow::previewRender(QString gcode, QGraphicsScene* graphicsscene, 
             if (exist[0]) {
                 //Меняем цвет
                 if (str_num > line_exec)
-                    pen.setColor(QColor(70, 70, 70));
+                    pen.setColor(*penColor);
                 else
-                    pen.setColor(QColor(42, 170, 203));
-
+                    pen.setColor(*penColorLight);
 
                 //Если была указана ось Z
                 if (exist[3]) {
@@ -470,7 +473,32 @@ void MainWindow::on_button_clear_clicked()
 }
 
 void MainWindow::preview_update_timer() {
-    if (!projectWorking) on_gcode_edit_textChanged();
+    if (projectWorking) return; //Если проект запущен, то картинка и так перерисовывается автоматически
+
+    //Создаём переменные для запоминания предыдущих размеров сцены
+    static int sceneLastWidth = 0;
+    static int sceneLastHeight = 0;
+
+    //Если изменились размеры сцены
+    if (sceneLastWidth != ui->graphicsView->width() || sceneLastHeight != ui->graphicsView->height()) {
+        //Обновляем размеры графической сцены
+        scene->setSceneRect(-3, -3, ui->graphicsView->width() - 6, ui->graphicsView->height() - 6);
+
+        //Обновляем цвет пера
+        *penColor        = QTextEdit().palette().color(QPalette::WindowText);
+        *penColorLight   = QTextEdit().palette().color(QPalette::Highlight);
+
+        //Копируем текст G-code
+        QString str = ui->gcode_edit->toPlainText();
+
+        //Показываем картинку
+        previewRender(str, scene, xsteps + 1, ysteps + 1, previewscaling);
+
+        //Запоминаем размеры
+        sceneLastWidth  = ui->graphicsView->width();
+        sceneLastHeight = ui->graphicsView->height();
+    }
+
 }
 
 void MainWindow::data_exchange_timer() {
@@ -520,8 +548,13 @@ void MainWindow::data_exchange_timer() {
     /* Показываем статистику */
     ui->progressBar->setValue((i + 1) * 100 / g_code->size());
 
+    //Обновляем цвет пера
+    *penColor        = QTextEdit().palette().color(QPalette::WindowText);
+    *penColorLight   = QTextEdit().palette().color(QPalette::Highlight);
+
     //Обновляем размеры графической сцены
-    scene->setSceneRect(0, 0, ui->graphicsView->width(), ui->graphicsView->height());
+    scene->setSceneRect(-3, -3, ui->graphicsView->width() - 6, ui->graphicsView->height() - 6);
+
     //Показываем картинку
     previewRender(g_code->getString(), scene, xsteps + 1, ysteps + 1, previewscaling, i);
 

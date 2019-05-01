@@ -8,6 +8,7 @@
 #include <QMessageBox>
 #include <QComboBox>
 #include <QTextEdit>
+#include <QColor>
 #include "config.h"
 #include "gcode.h"
 #include <QTimer>
@@ -87,6 +88,9 @@ private:
     QTimer          *mainTimer;
     QTimer          *previewTimer;
     QGraphicsScene  *scene;
+
+    QColor          *penColor;
+    QColor          *penColorLight;
 
     bool previewscaling = 1;
     bool projectWorking = 0;
