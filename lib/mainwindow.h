@@ -18,6 +18,15 @@
 #include <QtSerialPort/QSerialPort>
 #include <QtSerialPort/QSerialPortInfo>
 
+//Время, через которое будет перерисовываться картинка
+#define PREVIEW_TIMER_DELAY 200
+
+//Время, через которое будет обновляться информация о портах
+#define IO_TIMER_DELAY      2000
+
+
+#define MAIN_TIMER_DELAY    10
+
 namespace Ui {
 class MainWindow;
 }
@@ -47,6 +56,8 @@ private slots:
 
     void preview_update_timer();
 
+    void io_update_timer();
+
     void on_action_about_triggered();
 
     void on_console_line_returnPressed();
@@ -58,6 +69,8 @@ private slots:
     void on_gcode_edit_textChanged();
 
     void on_checkBox_stateChanged(int arg1);
+
+    void on_penSize_valueChanged(int value);
 
 private:
     Ui::MainWindow *ui;
@@ -78,31 +91,35 @@ private:
     void    start();
     ///Рисует картинку предпросмотра
     void    previewRender(QString, QGraphicsScene*, int, int, bool, int);
+    ///Читает все настройки программы
+    void    settingsRead();
 
-    //Последовательный порт
     QSerialPort     *comPort;
     QSerialPortInfo *portInfo;
+    QGraphicsScene  *scene;
     Config          *config;
-    //Главный массив с G-code
     GCode           *g_code;
     QTimer          *mainTimer;
     QTimer          *previewTimer;
-    QGraphicsScene  *scene;
-
+    QTimer          *ioTimer;
     QColor          *penColor;
     QColor          *penColorLight;
 
     bool previewscaling = 1;
     bool projectWorking = 0;
 
-    int xsteps;
-    int ysteps;
-    int zmin;
-    int zmax;
-    int step_filling;
-    bool xisgeneral;
-    bool changeaxis;
-    bool dirchange;
+    /* Аналоги параметров в найстройках */
+    int     xsteps;
+    int     ysteps;
+    int     zmin;
+    int     zmax;
+    int     step_filling;
+    bool    xisgeneral;
+    bool    changeaxis;
+    bool    dirchange;
+    int     timeout;
+    QString answer;
+
 };
 
 #endif // MAINWINDOW_H

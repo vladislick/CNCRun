@@ -49,6 +49,10 @@ Settings::Settings(QWidget *parent) :
         } else if (config->parameter(i) == "dirchange") {
             if (config->value(i) == "true" || config->value(i) == "1") ui->checkBox_2->setChecked(1);
             else ui->checkBox_2->setChecked(0);
+        } else if (config->parameter(i) == "timeout") {
+            ui->spinBox_5->setValue(config->value(i).toInt());
+        } else if (config->parameter(i) == "answer") {
+            ui->lineEdit->setText(config->value(i));
         }
     }
 }
@@ -83,7 +87,14 @@ void Settings::on_pushButton_clicked()
     str += "   //Проверка чётности\n";
 
     //Указываем стоп-биты
-    str += "stop_bits       = " + ui->comboBox_3->currentText() + "     //Стоп-биты\n\n" ;
+    str += "stop_bits       = " + ui->comboBox_3->currentText() + "     //Стоп-биты\n" ;
+
+    //Указываем время ответа
+    str += "timeout         = " + ui->spinBox_5->text() + "    //Время для ответа\n";
+
+    //Указываем ответ от станка
+    str += "answer          = " + ui->lineEdit->text() + "     //Ответ от станка\n\n";
+
 
     str += "[GCODE configuration]\n";
 
@@ -97,7 +108,23 @@ void Settings::on_pushButton_clicked()
     } else {
         str += "x";
     }
-    str += "     //Относительно какой оси делать G-code\n\n";
+    str += "     //Относительно какой оси делать G-code\n";
+
+    //Указываем нужно ли изменить направление сканирования
+    str += "changeaxis      = ";
+    if (ui->checkBox->isChecked()) {
+        str += "true  //Изменить направление сканирования\n";
+    } else {
+        str += "false //Изменить направление сканирования\n";
+    }
+
+    //Указываем нужно ли менять направление сканирования
+    str += "dirchange       = ";
+    if (ui->checkBox_2->isChecked()) {
+        str += "true  //Менять направление сканирования\n\n";
+    } else {
+        str += "false //Менять направление сканирования\n\n";
+    }
 
     str += "[CNC configuration]\n";
 
@@ -113,21 +140,6 @@ void Settings::on_pushButton_clicked()
     //Указываем значение Z для поднятого инструмента
     str += "axisz_up    = " + QString::number(ui->spinBox_4->value()) + "        //Значение Z для поднятого инструмента\n";
 
-    //Указываем нужно ли изменить направление сканирования
-    str += "changeaxis  = ";
-    if (ui->checkBox->isChecked()) {
-        str += "true      //Изменить направление сканирования\n";
-    } else {
-        str += "false     //Изменить направление сканирования\n";
-    }
-
-    //Указываем нужно ли менять направление сканирования
-    str += "dirchange   = ";
-    if (ui->checkBox_2->isChecked()) {
-        str += "true      //Менять направление сканирования";
-    } else {
-        str += "false     //Менять направление сканирования";
-    }
 
     //Пересоздаём файл конфигурации
     config->make(str);

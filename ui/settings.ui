@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>749</width>
-    <height>498</height>
+    <width>600</width>
+    <height>450</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -161,7 +161,11 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_13">
             <item>
-             <widget class="QSpinBox" name="spinBox_5"/>
+             <widget class="QSpinBox" name="spinBox_5">
+              <property name="maximum">
+               <number>120</number>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QLabel" name="label_7">
@@ -193,6 +197,9 @@
            <widget class="QLineEdit" name="lineEdit">
             <property name="text">
              <string>y</string>
+            </property>
+            <property name="maxLength">
+             <number>20</number>
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
@@ -377,7 +384,7 @@
              <string>Максимальное значение по оси X</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -387,7 +394,7 @@
              <number>0</number>
             </property>
             <property name="maximum">
-             <number>10000</number>
+             <number>100000</number>
             </property>
            </widget>
           </item>
@@ -413,6 +420,9 @@
             <property name="text">
              <string>Максимальное значение по оси Y</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item>
@@ -421,7 +431,7 @@
              <number>0</number>
             </property>
             <property name="maximum">
-             <number>10000</number>
+             <number>100000</number>
             </property>
            </widget>
           </item>
@@ -447,12 +457,22 @@
             <property name="text">
              <string>Физическая длина стола</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_17">
             <item>
-             <widget class="QDoubleSpinBox" name="doubleSpinBox"/>
+             <widget class="QDoubleSpinBox" name="doubleSpinBox">
+              <property name="decimals">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <double>5000.000000000000000</double>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QLabel" name="label_12">
@@ -485,12 +505,22 @@
             <property name="text">
              <string>Физическая ширина стола</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_19">
             <item>
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_2"/>
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
+              <property name="decimals">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <double>5000.000000000000000</double>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QLabel" name="label_15">
@@ -523,6 +553,9 @@
             <property name="text">
              <string>Значение Z для опущенного инструмента</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item>
@@ -531,7 +564,7 @@
              <number>0</number>
             </property>
             <property name="maximum">
-             <number>10000</number>
+             <number>100000</number>
             </property>
            </widget>
           </item>
@@ -557,6 +590,9 @@
             <property name="text">
              <string>Значение Z для поднятого инструмента</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item>
@@ -565,7 +601,7 @@
              <number>0</number>
             </property>
             <property name="maximum">
-             <number>10000</number>
+             <number>100000</number>
             </property>
            </widget>
           </item>

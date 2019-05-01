@@ -14,53 +14,41 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    /* Разбиремся с файлом конфигурации */
+    /* Файл конфигурации */
     config = new Config("settings.conf");
 
-    /* Определяем последовательный порт */
-    comPort = new QSerialPort();
-    portInfo = new QSerialPortInfo();
-    comPort->setBaudRate(QSerialPort::Baud9600);
-    comPort->setFlowControl(QSerialPort::NoFlowControl);
-    comPort->setParity(QSerialPort::NoParity);
-    comPort->setDataBits(QSerialPort::Data8);
-    comPort->setStopBits(QSerialPort::OneStop);
-
+    /* Создаём нужные объекты */
+    ioTimer         = new QTimer();
     mainTimer       = new QTimer();
     previewTimer    = new QTimer();
     g_code          = new GCode();
     penColor        = new QColor();
     penColorLight   = new QColor();
     scene           = new QGraphicsScene();
-    ui->graphicsView->setScene(scene);
+    comPort         = new QSerialPort();
+    portInfo        = new QSerialPortInfo();
 
+    /* Определяем последовательный порт */
+    comPort->setFlowControl(QSerialPort::NoFlowControl);
+    comPort->setDataBits(QSerialPort::Data8);
+
+    /* Читаем конфигурацию */
+    settingsRead();
 
     /* Подключаем сигналы и слоты */
+    connect(ioTimer, SIGNAL(timeout()), this, SLOT(io_update_timer()));
     connect(mainTimer, SIGNAL(timeout()), this, SLOT(data_exchange_timer()));
     connect(previewTimer, SIGNAL(timeout()), this, SLOT(preview_update_timer()));
 
-    previewTimer->start(200);
+    /* Запускаем таймеры */
+    ioTimer->start(IO_TIMER_DELAY);
+    previewTimer->start(PREVIEW_TIMER_DELAY);
+
+    ui->graphicsView->setScene(scene);
 
     /* Выполняем начальный функционал */
     consoleWrite("******** WELCOME TO CNCRUN ********", ui->console);
     uiUpdate();
-
-    /* Проверяем наличие конфигурационного файла */
-    if (!config->isexist()) {
-        consoleWrite("No configuration file [SYSTEM]", ui->console);
-        consoleWrite("File created automatically but you have to configure your CNC machine manually is settings menu [SYSTEM]", ui->console);
-        config->make("");
-    }
-
-    /* Указываем базовые значения переменных конфигурации */
-    step_filling    = 1;
-    xisgeneral      = 1;
-    xsteps          = 100;
-    ysteps          = 100;
-    zmin            = 30;
-    zmax            = 40;
-    changeaxis      = 0;
-    dirchange       = 0;
 
     /* Указываем иконки */
     this->setWindowIcon(QIcon("cncrun.png"));
@@ -68,6 +56,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->action_exit->setIcon(QIcon("icons/exit.png"));
     ui->action_settings->setIcon(QIcon("icons/settings.png"));
     ui->action_about->setIcon(QIcon("icons/about.png"));
+
 }
 
 ///Отправить текст на консоль вывода
@@ -96,14 +85,16 @@ short MainWindow::serialWrite(QSerialPort* serial, const char* str, int length) 
 
 ///Обновляет данные о портах
 void MainWindow::serialUpdate(QSerialPortInfo* port, QComboBox* box) {
+    int index = box->currentIndex();
     box->clear();
-       if (serialAvailable(port)) {
-           for (char i = 0; i < port->availablePorts().size(); i++) {
-               box->addItem(port->availablePorts()[i].portName());
-           }
-       } else {
-           box->addItem("Не найдено");
-       }
+    if (serialAvailable(port)) {
+        for (char i = 0; i < port->availablePorts().size(); i++) {
+            box->addItem(port->availablePorts()[i].portName());
+        }
+        if (port->availablePorts().size() > index) box->setCurrentIndex(index);
+    } else {
+        box->addItem("Не найдено");
+    }
 }
 
 ///Возвращает количество доступных портов
@@ -115,40 +106,16 @@ int MainWindow::serialAvailable(QSerialPortInfo* port) {
 void MainWindow::fileOpen(QString path) {
     QFile file(path);
 
-    /* Проверяем, есть ли файл конфигурации */
-    if (!config->isexist()) {
-        config->make("");
-        consoleWrite("NEW CONFIG FILE WAS CREATED", ui->console);
-    }
-    config->read();
+    //Читаем параметры из файла
+    settingsRead();
 
-    /* Указываем новые значения по файлу конфигурации */
-    for (int i = 0; i < config->count(); i++) {
-        if (config->parameter(i) == "step_filling") step_filling = config->value(i).toInt();
-        else if (config->parameter(i) == "main_axis") {
-            if (config->value(i) == "x") xisgeneral = 1;
-            else xisgeneral = 0;
-        } else if (config->parameter(i) == "axisx_max") xsteps = config->value(i).toInt();
-        else if (config->parameter(i) == "axisy_max") ysteps = config->value(i).toInt();
-        else if (config->parameter(i) == "axisz_down") zmin = config->value(i).toInt();
-        else if (config->parameter(i) == "axisz_up") zmax = config->value(i).toInt();
-        else if (config->parameter(i) == "changeaxis") {
-            if (config->value(i) == "true" || config->value(i) == "1") changeaxis = 1;
-            else changeaxis = 0;
-        }
-        else if (config->parameter(i) == "dirchange") {
-            if (config->value(i) == "true" || config->value(i) == "1") dirchange = 1;
-            else dirchange = 0;
-        }
-    }
-
-    /* Если это файл с G-code */
+    /* Если это файл с кодом */
     if (path.indexOf(".txt") > 0) {
         if (file.open(QFile::ReadOnly | QFile::Text)) {
             *g_code = QString::fromUtf8(file.readAll().toStdString().c_str());
             ui->gcode_edit->setText(g_code->getString());
         } else {
-            QMessageBox box(QMessageBox::Critical, "Невозможно открыть файл", "Не удалось открыть выбранный файл");
+            QMessageBox box(QMessageBox::Warning, "Невозможно открыть файл", "Не удалось открыть выбранный файл");
             box.exec();
         }
     }
@@ -163,27 +130,29 @@ void MainWindow::fileOpen(QString path) {
         for (int i = 0; i < img.width(); i++) pixels[i] = new bool[img.height()];
 
         /* Сканируем каждый пиксель картинки */
-        if (img.width() == (xsteps + 1) && img.height() == (ysteps + 1)) {
-            /* Сканируем по X */
-            for (int x = 0; x < img.width(); x++) {
-                /* Сканируем по Y */
-                for (int y = 0; y < img.height(); y++) {
-                    pixelColor = img.pixelColor(x, y);
-                    if (pixelColor.red() + pixelColor.red() + pixelColor.red() > 381) {
-                        pixels[x][y] = 0; //Если это светлый цвет
-                    } else {
-                        pixels[x][y] = 1; //Если это тёмный цвет
-                    }
-                }
-            }
-        } else {
+        if (img.width() != (xsteps + 1) || img.height() != (ysteps + 1)) {
+
+            //Создаём заготовленный текст для сообщения
             QString str = "Выбранное изображение не подходит для преобразования в G-code\nРазмер должен быть строго ";
             str += QString::number(xsteps + 1) + "x" + QString::number(ysteps + 1) + "\n\n";
             str += "Ваше изображение имеет разрешение " + QString::number(img.width()) + "x" + QString::number(img.height());
 
-            QMessageBox box(QMessageBox::Critical, "Изображение не подходит", str);
+            //Выводим сообщение
+            QMessageBox box(QMessageBox::Warning, "Изображение не подходит", str);
             box.exec();
             return;
+        }
+
+        /* Сканируем каждый пиксель картинки */
+        for (int x = 0; x < img.width(); x++) { //По X
+            for (int y = 0; y < img.height(); y++) { //По Y
+                pixelColor = img.pixelColor(x, y);
+                if (pixelColor.red() + pixelColor.red() + pixelColor.red() > 381) {
+                    pixels[x][y] = 0; //Если это светлый цвет
+                } else {
+                    pixels[x][y] = 1; //Если это тёмный цвет
+                }
+            }
         }
 
         /* Генерируем G-code */
@@ -317,6 +286,7 @@ void MainWindow::fileOpen(QString path) {
         for (int i = 0; i < img.width(); i++) delete[] pixels[i];
         delete[] pixels;
 
+        /* Выводим полученный код */
         *g_code = gcode_temp;
         ui->gcode_edit->setText(gcode_temp);
     }
@@ -332,7 +302,6 @@ void MainWindow::uiUpdate() {
     ui->console_line->setEnabled(isActive);
     ui->button_send->setEnabled(isActive);
     ui->gcode_edit->setReadOnly(projectWorking);
-    ui->progressLabel->setEnabled(projectWorking);
     ui->progressBar->setEnabled(projectWorking);
 
     if (projectWorking) {
@@ -342,15 +311,13 @@ void MainWindow::uiUpdate() {
         ui->progressBar->setValue(0);
     }
 
-    if (comPort->isOpen()) ui->button_com->setText("Отключить");
+    if (comPort->isOpen())
+        ui->button_com->setText("Отключить");
     else {
-        serialUpdate(portInfo, ui->comboBox);
-        if (serialAvailable(portInfo)) {
-            ui->button_com->setText("Подключить");
-        } else {
-            ui->button_com->setText("Обновить");
-        }
+        ui->button_com->setText("Подключить");
     }
+
+    io_update_timer();
 }
 
 ///Рисует картинку предпросмотра
@@ -375,7 +342,9 @@ void    MainWindow::previewRender(QString gcode, QGraphicsScene* graphicsscene, 
 
     //Доп. настройка
     QPen pen;
-    pen.setWidth(dpi + 1 + scaling);
+    int pen_size = dpi + ui->penSize->value() - 5 + scaling;
+    if (pen_size < 1) pen_size = 1;
+    pen.setWidth(pen_size);
     int dy = (graphicsscene->height() - (double)height * dpi) / 2;
 
     graphicsscene->clear();
@@ -501,6 +470,62 @@ void MainWindow::preview_update_timer() {
 
 }
 
+void MainWindow::io_update_timer() {
+    if (projectWorking) return;
+
+    static int ports = 0;
+
+    serialUpdate(portInfo, ui->comboBox);
+
+    if (ports != serialAvailable(portInfo)) {
+        ports = serialAvailable(portInfo);
+
+        /* Выводим названия найденных портов */
+        QString str;
+        bool    portExist = 0;
+
+        if (ports < 2) str = "Found device: ";
+        else str = "Found devices: ";
+
+        for (char i = 0; i < portInfo->availablePorts().size(); i++) {
+            str += portInfo->availablePorts()[i].portName() + ' ';
+            //Если подключенный ранее порт встретился
+            if (portInfo->availablePorts()[i].portName() == comPort->portName()) portExist = 1;
+        }
+
+        str += " [SYSTEM]";
+
+        //Если мы подключены, но порта такого уже нет
+        if (comPort->isOpen() && !portExist) {
+            consoleWrite("Connection LOST [SYSTEM]", ui->console);
+            comPort->close();
+        }
+
+        if (ports > 0) consoleWrite(str, ui->console);
+    }
+
+    if (comPort->isOpen()) {
+        ui->button_com->setText("Отключить");
+        ui->comboBox->setEnabled(0);
+    } else {
+        settingsRead();
+        ui->button_com->setText("Подключить");
+        ui->comboBox->setEnabled(1);
+    }
+
+    /* Выводим информацию о текущей настройке порта */
+    ui->labelBaudRate->setText(QString::number(comPort->baudRate()));
+    if (comPort->parity() == QSerialPort::NoParity)
+        ui->labelParity->setText("Нет");
+    else
+        ui->labelParity->setText("Да");
+    ui->labelStopBits->setText(QString::number(comPort->stopBits()));
+    ui->labelTimeout->setText(QString::number(timeout));
+
+
+    ui->button_com->setEnabled(ports);
+}
+
 void MainWindow::data_exchange_timer() {
     static int i = 0;
     static int time = 0;
@@ -536,13 +561,13 @@ void MainWindow::data_exchange_timer() {
 
     /* Отправляем команду */
     if (serialWrite(comPort, g_code->getCommand(i).toStdString().c_str(), g_code->getCommand(i).length() + 1) < 0) {
-        consoleWrite("Connection BROKEN, Sorry [SYSTEM]", ui->console);
+        consoleWrite("Connection LOST [SYSTEM]", ui->console);
         projectWorking = 0;
         return;
     } else {
         data = comPort->readAll();
         consoleWrite("Sent: " + g_code->getCommand(i), ui->console);
-        time = 5000;
+        time = timeout*1000/MAIN_TIMER_DELAY;
     }
 
     /* Показываем статистику */
@@ -584,7 +609,7 @@ void MainWindow::on_button_start_clicked()
 
         consoleWrite("\n[PROJECT STARTED]\n", ui->console);
 
-        mainTimer->start(2);
+        mainTimer->start(MAIN_TIMER_DELAY);
     } else {
         projectWorking = 0;
     }
@@ -593,44 +618,35 @@ void MainWindow::on_button_start_clicked()
 
 void MainWindow::on_button_com_clicked()
 {
-    if (ui->button_com->text() == "Подключить") {
+    if (!comPort->isOpen()) {
+        /* Читаем конфигурацию */
+        settingsRead();
 
-        /* Проверяем, есть ли файл конфигурации */
-        if (!config->isexist()) {
-            config->make("");
-            consoleWrite("NEW CONFIG FILE WAS CREATED", ui->console);
-        }
-        config->read();
-
-        /* Указываем новые значения по файлу конфигурации */
-        for (int i = 0; i < config->count(); i++) {
-            if (config->parameter(i) == "baud_rate") comPort->setBaudRate(config->value(i).toInt());
-            else if (config->parameter(i) == "parity") {
-                if (config->value(i) == "no") comPort->setParity(QSerialPort::NoParity);
-                else comPort->setParity(QSerialPort::EvenParity);
-            } else if (config->parameter(i) == "stop_bits") {
-                if (config->value(i) == "1") comPort->setStopBits(QSerialPort::OneStop);
-                else comPort->setStopBits(QSerialPort::TwoStop);
-            }
-        }
-
+        //Указываем имя порта
         comPort->setPortName(ui->comboBox->currentText());
+
         if (comPort->open(QIODevice::ReadWrite)) {
+            //Если удалось подключиться
             consoleWrite("Connected to " + ui->comboBox->currentText() + " [SYSTEM]", ui->console);
         } else {
+            //Если подключение не удалось
             consoleWrite("Cannot connect to " + ui->comboBox->currentText() + " [SYSTEM]", ui->console);
         }
-    } else if (ui->button_com->text() == "Отключить") {
+    } else {
         comPort->close();
     }
+
+    //Обновляем интерфейс
     uiUpdate();
 }
 
 void MainWindow::on_action_open_triggered()
 {
-    //Если уже идёт выполнение проекта
+    //Если уже идёт выполнение
     if (projectWorking) {
-        consoleWrite("Project is already running, ABORTED [SYSTEM]", ui->console);
+        consoleWrite("", ui->console);
+        consoleWrite("Project is already running, aborted [SYSTEM]", ui->console);
+        consoleWrite("", ui->console);
         return;
     }
 
@@ -644,7 +660,7 @@ void MainWindow::on_button_home_clicked()
     QString str = "G00 X00 Y00 Z" + QString::number(zmax);
     if (serialWrite(comPort, str.toStdString().c_str(), 17) < 0) {
         uiUpdate();
-        consoleWrite("Connection BROKEN, Sorry [SYSTEM]", ui->console);
+        consoleWrite("Connection LOST [SYSTEM]", ui->console);
     } else consoleWrite("Moving to HOME position [USER]", ui->console);
 }
 
@@ -657,11 +673,7 @@ void MainWindow::on_action_about_triggered()
 
 void MainWindow::on_console_line_returnPressed()
 {
-    if (ui->console_line->text().isEmpty()) return;
-    if (serialWrite(comPort, ui->console_line->text().toStdString().c_str(), ui->console_line->text().length() + 1) < 0) {
-        uiUpdate();
-        consoleWrite("Connection BROKEN, Sorry [SYSTEM]", ui->console);
-    } else consoleWrite("Sent: " + ui->console_line->text() + " [USER]", ui->console);
+    on_button_send_clicked();
 }
 
 void MainWindow::on_button_send_clicked()
@@ -669,7 +681,7 @@ void MainWindow::on_button_send_clicked()
     if (ui->console_line->text().isEmpty()) return;
     if (serialWrite(comPort, ui->console_line->text().toStdString().c_str(), ui->console_line->text().length() + 1) < 0) {
         uiUpdate();
-        consoleWrite("Connection BROKEN, Sorry [SYSTEM]", ui->console);
+        consoleWrite("Connection LOST [SYSTEM]", ui->console);
     } else consoleWrite("Sent: " + ui->console_line->text() + " [USER]", ui->console);
 }
 
@@ -701,4 +713,73 @@ void MainWindow::on_checkBox_stateChanged(int arg)
 {
     previewscaling = arg;
     if (!projectWorking) on_gcode_edit_textChanged();
+}
+
+void MainWindow::settingsRead() {
+    /* Проверяем, есть ли файл конфигурации */
+    if (!config->isexist()) {
+
+        //Пишем и оповещаем о том, что отсутствует файл конфигурации
+        consoleWrite("No configuration file [SYSTEM]", ui->console);
+        config->make("");
+        consoleWrite("Configuration file created automatically [SYSTEM]", ui->console);
+        QMessageBox box(QMessageBox::Information, "Не найден файл конфигурации", "Не удалось обнаружить файл конфигурации!\nАвтоматически создан пустой файл конфигурации.\nПожалуйста, укажите параметры вашего оборудования");
+        box.exec();
+
+        //Открываем настройки
+        Settings settings;
+        settings.setModal(true);
+        settings.exec();
+    }
+    config->read();
+
+    /* Указываем новые значения по файлу конфигурации */
+    for (int i = 0; i < config->count(); i++) {
+        if (config->parameter(i) == "step_filling") step_filling = config->value(i).toInt();
+        else if (config->parameter(i) == "main_axis") {
+            if (config->value(i) == "x") xisgeneral = 1;
+            else xisgeneral = 0;
+        }
+        else if (config->parameter(i) == "axisx_max") xsteps = config->value(i).toInt();
+        else if (config->parameter(i) == "axisy_max") ysteps = config->value(i).toInt();
+        else if (config->parameter(i) == "axisz_down") zmin = config->value(i).toInt();
+        else if (config->parameter(i) == "axisz_up") zmax = config->value(i).toInt();
+        else if (config->parameter(i) == "changeaxis") {
+            if (config->value(i) == "true" || config->value(i) == "1") changeaxis = 1;
+            else changeaxis = 0;
+        }
+        else if (config->parameter(i) == "dirchange") {
+            if (config->value(i) == "true" || config->value(i) == "1") dirchange = 1;
+            else dirchange = 0;
+        }
+        else if (config->parameter(i) == "baud_rate") comPort->setBaudRate(config->value(i).toInt());
+        else if (config->parameter(i) == "parity") {
+            if (config->value(i) == "no") comPort->setParity(QSerialPort::NoParity);
+            else comPort->setParity(QSerialPort::EvenParity);
+        }
+        else if (config->parameter(i) == "stop_bits") {
+            if (config->value(i) == "1") comPort->setStopBits(QSerialPort::OneStop);
+            else comPort->setStopBits(QSerialPort::TwoStop);
+        }
+        else if (config->parameter(i) == "timeout") timeout = config->value(i).toInt();
+        else if (config->parameter(i) == "answer") answer = config->value(i);
+    }
+}
+
+void MainWindow::on_penSize_valueChanged(int value)
+{
+    ui->penValue->setText(QString::number(value));
+
+    //Обновляем размеры графической сцены
+    scene->setSceneRect(-3, -3, ui->graphicsView->width() - 6, ui->graphicsView->height() - 6);
+
+    //Обновляем цвет пера
+    *penColor        = QTextEdit().palette().color(QPalette::WindowText);
+    *penColorLight   = QTextEdit().palette().color(QPalette::Highlight);
+
+    //Копируем текст G-code
+    QString str = ui->gcode_edit->toPlainText();
+
+    //Показываем картинку
+    previewRender(str, scene, xsteps + 1, ysteps + 1, previewscaling);
 }
