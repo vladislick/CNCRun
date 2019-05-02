@@ -156,7 +156,7 @@ void MainWindow::fileOpen(QString path) {
         /* Сканируем каждый пиксель картинки */
         for (int x = 0; x < img.width(); x++) { //По X
             for (int y = 0; y < img.height(); y++) { //По Y
-                pixelColor = img.pixelColor(x, y);
+                pixelColor = img.pixel(x, y);
                 if (pixelColor.red() + pixelColor.red() + pixelColor.red() > 381) {
                     pixels[x][y] = 0; //Если это светлый цвет
                 } else {

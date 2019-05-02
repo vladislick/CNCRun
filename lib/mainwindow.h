@@ -19,7 +19,7 @@
 #include <QtSerialPort/QSerialPortInfo>
 
 //Время, через которое будет перерисовываться картинка
-#define PREVIEW_TIMER_DELAY 300
+#define PREVIEW_TIMER_DELAY 200
 
 //Время, через которое будет обновляться информация о портах
 #define IO_TIMER_DELAY      2000
