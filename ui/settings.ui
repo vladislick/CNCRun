@@ -161,14 +161,17 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_13">
             <item>
-             <widget class="QSpinBox" name="spinBox_5">
+             <widget class="QSpinBox" name="spinBoxTimeout">
+              <property name="minimum">
+               <number>1</number>
+              </property>
               <property name="maximum">
                <number>120</number>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QLabel" name="label_7">
+             <widget class="QLabel" name="labelSeconds">
               <property name="text">
                <string>секунд</string>
               </property>
@@ -386,6 +389,9 @@
             <property name="alignment">
              <set>Qt::AlignCenter</set>
             </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
           <item>
@@ -423,6 +429,9 @@
             <property name="alignment">
              <set>Qt::AlignCenter</set>
             </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
           <item>
@@ -451,31 +460,27 @@
          </spacer>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_16" stretch="2,1">
+         <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="2,1">
           <item>
-           <widget class="QLabel" name="label_11">
+           <widget class="QLabel" name="label_14">
             <property name="text">
-             <string>Физическая длина стола</string>
+             <string>Физическая ширина стола</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
             </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_17">
+           <layout class="QHBoxLayout" name="horizontalLayout_19">
             <item>
-             <widget class="QDoubleSpinBox" name="doubleSpinBox">
-              <property name="decimals">
-               <number>1</number>
-              </property>
-              <property name="maximum">
-               <double>5000.000000000000000</double>
-              </property>
-             </widget>
+             <widget class="QSpinBox" name="spinBoxTableWidth"/>
             </item>
             <item>
-             <widget class="QLabel" name="label_12">
+             <widget class="QLabel" name="label_15">
               <property name="text">
                <string>мм</string>
               </property>
@@ -499,31 +504,30 @@
          </spacer>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="2,1">
+         <layout class="QHBoxLayout" name="horizontalLayout_16" stretch="2,1">
           <item>
-           <widget class="QLabel" name="label_14">
+           <widget class="QLabel" name="label_11">
             <property name="text">
-             <string>Физическая ширина стола</string>
+             <string>Физическая длина стола</string>
+            </property>
+            <property name="scaledContents">
+             <bool>false</bool>
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
             </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_19">
+           <layout class="QHBoxLayout" name="horizontalLayout_17">
             <item>
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
-              <property name="decimals">
-               <number>1</number>
-              </property>
-              <property name="maximum">
-               <double>5000.000000000000000</double>
-              </property>
-             </widget>
+             <widget class="QSpinBox" name="spinBoxTableHeight"/>
             </item>
             <item>
-             <widget class="QLabel" name="label_15">
+             <widget class="QLabel" name="label_12">
               <property name="text">
                <string>мм</string>
               </property>
@@ -555,6 +559,9 @@
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -592,6 +599,9 @@
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
             </property>
            </widget>
           </item>

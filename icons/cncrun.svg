@@ -14,7 +14,7 @@
    viewBox="0 0 210 297"
    version="1.1"
    id="svg8"
-   sodipodi:docname="CNCRunIcon.svg"
+   sodipodi:docname="cncrun.svg"
    inkscape:version="0.92.4 5da689c313, 2019-01-14"
    inkscape:export-filename="/home/vladislick/Документы/cnc_run_qt/icons/CNCRunIcon.svg.png"
    inkscape:export-xdpi="880.73004"
@@ -36,9 +36,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="3.6203867"
-     inkscape:cx="132.2173"
-     inkscape:cy="1004.0551"
+     inkscape:zoom="0.64"
+     inkscape:cx="158.31644"
+     inkscape:cy="530.64559"
      inkscape:document-units="mm"
      inkscape:current-layer="layer4"
      showgrid="false"
@@ -46,9 +46,9 @@
      showguides="true"
      inkscape:guide-bbox="true"
      inkscape:window-width="1920"
-     inkscape:window-height="1027"
+     inkscape:window-height="1025"
      inkscape:window-x="0"
-     inkscape:window-y="0"
+     inkscape:window-y="26"
      inkscape:window-maximized="1" />
   <metadata
      id="metadata5">
@@ -66,24 +66,24 @@
      id="layer2"
      inkscape:label="Layer 2">
     <rect
-       style="fill:#333333;stroke-width:0.52194208"
+       style="fill:#333333;stroke-width:4.95605564"
        id="rect3731-3"
-       width="17.303831"
-       height="22.530926"
-       x="24.059269"
-       y="9.3173018" />
+       width="164.30702"
+       height="213.94043"
+       x="22.904686"
+       y="39.289631" />
   </g>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
     <rect
-       style="fill:#e6e6e6;stroke-width:0.48813209"
+       style="fill:#e6e6e6;stroke-width:4.63501549"
        id="rect3731"
-       width="16.182934"
-       height="21.07143"
-       x="24.619717"
-       y="10.047049" />
+       width="153.66364"
+       height="200.08192"
+       x="28.226364"
+       y="46.21888" />
   </g>
   <g
      inkscape:groupmode="layer"
@@ -95,7 +95,7 @@
      inkscape:label="Layer 4">
     <g
        id="g38"
-       transform="translate(-1.0852051,0.14063277)">
+       transform="matrix(9.4954127,0,0,9.4954127,-215.85248,-47.84662)">
       <g
          transform="rotate(15,30.322175,44.501235)"
          id="g3783">
@@ -156,34 +156,34 @@
          id="tspan41" /></text>
     <text
        xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:2.11220264px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#4d4d4d;fill-opacity:1;stroke:none;stroke-width:0.26402533"
-       x="25.29418"
-       y="12.491014"
+       style="font-style:normal;font-weight:normal;font-size:20.05623436px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#4d4d4d;fill-opacity:1;stroke:none;stroke-width:2.50702929"
+       x="34.630672"
+       y="69.425331"
        id="text47"><tspan
          sodipodi:role="line"
          id="tspan45"
-         x="25.29418"
-         y="12.491014"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Bold';fill:#4d4d4d;stroke-width:0.26402533">G00 F10</tspan><tspan
+         x="34.630672"
+         y="69.425331"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Bold';fill:#4d4d4d;stroke-width:2.50702929">G00 F10</tspan><tspan
          sodipodi:role="line"
-         x="25.29418"
-         y="15.150532"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Bold';fill:#4d4d4d;stroke-width:0.26402533"
+         x="34.630672"
+         y="94.999229"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Bold';fill:#4d4d4d;stroke-width:2.50702929"
          id="tspan49">G01 X45</tspan><tspan
          sodipodi:role="line"
-         x="25.29418"
-         y="17.810051"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Bold';fill:#4d4d4d;stroke-width:0.26402533"
+         x="34.630672"
+         y="120.57312"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Bold';fill:#4d4d4d;stroke-width:2.50702929"
          id="tspan51">G00 Y64</tspan><tspan
          sodipodi:role="line"
-         x="25.29418"
-         y="20.469568"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Bold';fill:#4d4d4d;stroke-width:0.26402533"
+         x="34.630672"
+         y="146.14702"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Bold';fill:#4d4d4d;stroke-width:2.50702929"
          id="tspan53">G02 Z32</tspan><tspan
          sodipodi:role="line"
-         x="25.29418"
-         y="23.109823"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Bold';fill:#4d4d4d;stroke-width:0.26402533"
+         x="34.630672"
+         y="171.21732"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Bold';fill:#4d4d4d;stroke-width:2.50702929"
          id="tspan55" /></text>
   </g>
 </svg>

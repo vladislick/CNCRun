@@ -7,6 +7,9 @@ Settings::Settings(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    /* Указываем иконку */
+    this->setWindowIcon(QIcon("cncrun.png"));
+
     /* Разбиремся с файлом конфигурации */
     config = new Config("settings.conf");
     if (!config->isexist()) {
@@ -50,9 +53,13 @@ Settings::Settings(QWidget *parent) :
             if (config->value(i) == "true" || config->value(i) == "1") ui->checkBox_2->setChecked(1);
             else ui->checkBox_2->setChecked(0);
         } else if (config->parameter(i) == "timeout") {
-            ui->spinBox_5->setValue(config->value(i).toInt());
+            ui->spinBoxTimeout->setValue(config->value(i).toInt());
         } else if (config->parameter(i) == "answer") {
             ui->lineEdit->setText(config->value(i));
+        } else if (config->parameter(i) == "tablewidth") {
+            ui->spinBoxTableWidth->setValue(config->value(i).toInt());
+        } else if (config->parameter(i) == "tableheight") {
+            ui->spinBoxTableHeight->setValue(config->value(i).toInt());
         }
     }
 }
@@ -90,7 +97,7 @@ void Settings::on_pushButton_clicked()
     str += "stop_bits       = " + ui->comboBox_3->currentText() + "     //Стоп-биты\n" ;
 
     //Указываем время ответа
-    str += "timeout         = " + ui->spinBox_5->text() + "    //Время для ответа\n";
+    str += "timeout         = " + ui->spinBoxTimeout->text() + "    //Время для ответа\n";
 
     //Указываем ответ от станка
     str += "answer          = " + ui->lineEdit->text() + "     //Ответ от станка\n\n";
@@ -140,6 +147,11 @@ void Settings::on_pushButton_clicked()
     //Указываем значение Z для поднятого инструмента
     str += "axisz_up    = " + QString::number(ui->spinBox_4->value()) + "        //Значение Z для поднятого инструмента\n";
 
+    //Указываем ширину стола
+    str += "tablewidth  = " + QString::number(ui->spinBoxTableWidth->value()) + "        //Физическая ширина стола\n";
+
+    //Указываем длину стола
+    str += "tableheight = " + QString::number(ui->spinBoxTableHeight->value()) + "        //Физическая длина стола\n";
 
     //Пересоздаём файл конфигурации
     config->make(str);
@@ -147,4 +159,16 @@ void Settings::on_pushButton_clicked()
 
     //Закрываем окно
     this->close();
+}
+
+void Settings::on_spinBoxTimeout_valueChanged(int arg)
+{
+    if (arg > 10 && arg <= 20) {
+        ui->labelSeconds->setText("секунд");
+        return;
+    }
+
+    if ((arg % 10) == 1) ui->labelSeconds->setText("секунда");
+    else if ((arg % 10) > 1 && (arg % 10) < 5) ui->labelSeconds->setText("секунды");
+    else ui->labelSeconds->setText("секунд");
 }

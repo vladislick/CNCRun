@@ -19,7 +19,7 @@
 #include <QtSerialPort/QSerialPortInfo>
 
 //Время, через которое будет перерисовываться картинка
-#define PREVIEW_TIMER_DELAY 200
+#define PREVIEW_TIMER_DELAY 300
 
 //Время, через которое будет обновляться информация о портах
 #define IO_TIMER_DELAY      2000
@@ -108,7 +108,7 @@ private:
     bool previewscaling = 1;
     bool projectWorking = 0;
 
-    /* Аналоги параметров в найстройках */
+    /* Параметры */
     int     xsteps;
     int     ysteps;
     int     zmin;
@@ -119,7 +119,8 @@ private:
     bool    dirchange;
     int     timeout;
     QString answer;
-
+    double  tableWidth;
+    double  tableHeight;
 };
 
 #endif // MAINWINDOW_H

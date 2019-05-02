@@ -7,6 +7,9 @@ AboutApp::AboutApp(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    /* Указываем иконку */
+    this->setWindowIcon(QIcon("cncrun.png"));
+
     /* Выводим логотип */
     imageLogo = new QPixmap("cncrun.png");
     ui->labelLogo->setPixmap(*imageLogo);

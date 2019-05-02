@@ -50,12 +50,22 @@ MainWindow::MainWindow(QWidget *parent) :
     consoleWrite("******** WELCOME TO CNCRUN ********", ui->console);
     uiUpdate();
 
+    //Обновляем цвет пера
+    *penColor        = QTextEdit().palette().color(QPalette::WindowText);
+    *penColorLight   = QTextEdit().palette().color(QPalette::Highlight);
+
     /* Указываем иконки */
     this->setWindowIcon(QIcon("cncrun.png"));
-    ui->action_open->setIcon(QIcon("icons/fileopen.png"));
+    if (penColor->red() + penColor->green() + penColor->blue() > 300) {
+        ui->action_open->setIcon(QIcon("icons/openfile_white.png"));
+        ui->action_settings->setIcon(QIcon("icons/settings_white.png"));
+        ui->action_about->setIcon(QIcon("icons/about_white.png"));
+    } else {
+        ui->action_open->setIcon(QIcon("icons/openfile_black.png"));
+        ui->action_settings->setIcon(QIcon("icons/settings_black.png"));
+        ui->action_about->setIcon(QIcon("icons/about_black.png"));
+    }
     ui->action_exit->setIcon(QIcon("icons/exit.png"));
-    ui->action_settings->setIcon(QIcon("icons/settings.png"));
-    ui->action_about->setIcon(QIcon("icons/about.png"));
 
 }
 
@@ -322,39 +332,57 @@ void MainWindow::uiUpdate() {
 
 ///Рисует картинку предпросмотра
 void    MainWindow::previewRender(QString gcode, QGraphicsScene* graphicsscene, int width, int height, bool scaling = 0, int line_exec = 0) {
-    //Определяем масштабирование
-    double dpi = graphicsscene->width()  / (width + 2);
 
-    //Если включено соотношение 1:1
-    double scale = 2;
-    bool   widthisbigger = 0; //Больше ли ширина рабочей зоны её длины
+    /* Адаптивный режим просмотра */
+    double scaleX = 1, scaleY = 1;
     if (scaling) {
-        if (height > width) {
-            scale = (double)height / (double)width;
-            width = height;
-        }
-        else {
-            widthisbigger = 1;
-            scale = (double)width / (double)height;
-            height = width;
-        }
+        scaleX = (height * (tableWidth / tableHeight)) / width;
+        scaleY = (width * (tableHeight / tableWidth)) / height;
+
+        if (scaleX > scaleY) scaleY = 1;
+        else scaleX = 1;
+
+        width   *= scaleX;
+        height  *= scaleY;
     }
 
-    //Доп. настройка
+    /* Определяем масштабирование */
+    double scalex = (graphicsscene->width() - 20)  / width;    //По ширине
+    double scaley = (graphicsscene->height() - 20) / height;   //По высоте
+    double mainScale;                                   //Итоговый масштаб
+
+    if (scalex > scaley) {
+        mainScale = scaley;
+    } else {
+        mainScale = scalex;
+    }
+
+    //Сдвиг картинки по X, чтобы она оказалась в центре сцены
+    double dy = ((graphicsscene->height() - 5) - height * mainScale) / 2;
+    //Сдвиг картинки по Y, чтобы она оказалась в центре сцены
+    double dx = ((graphicsscene->width() - 5) - width * mainScale) / 2;
+
+    /* Настройка пера */
     QPen pen;
-    int pen_size = dpi + ui->penSize->value() - 5 + scaling;
+    int pen_size;
+    if (ui->penSize->value() == 0) {
+        pen_size = int(mainScale - 1 + scaleX + scaleY + scaling);            //Если размер пера определяется автоматически
+    } else {
+        pen_size =  ui->penSize->value();                   //Если размер пера определяется слайдером вручную
+    }
+
+
     if (pen_size < 1) pen_size = 1;
     pen.setWidth(pen_size);
-    int dy = (graphicsscene->height() - (double)height * dpi) / 2;
 
     graphicsscene->clear();
 
     /* Читаем каждую команду и отрисовывем картинку с учётом масштабирования */
     QString tmp; tmp.clear();
-    int     currentx = 0, currenty = 0, currentz = 0; //Текущие координаты
-    int     value[4];   //Значение каждого параметра G-code (G, X, Y, Z)
-    bool    exist[4];   //Был ли указан параметр (G, X, Y, Z)
-    short   index = 0;      //К какому параметру относится значение (при чтении строки)
+    int     currentx = 0, currenty = 0, currentz = 0;   //Текущие координаты
+    int     value[4];                                   //Значение каждого параметра G-code (G, X, Y, Z)
+    bool    exist[4];                                   //Был ли указан параметр (G, X, Y, Z)
+    short   index = 0;                                  //К какому параметру относится значение (при чтении строки)
     int     z_min = 1000;
     int     z_max = 0;
     int     str_num = 0;
@@ -403,11 +431,7 @@ void    MainWindow::previewRender(QString gcode, QGraphicsScene* graphicsscene, 
                 //Если была указана ось X
                 if (exist[1]) {
                     if (currentz == z_min) {
-                        if (!scaling) graphicsscene->addLine(currentx * dpi, currenty * dpi + dy, value[1] * dpi, currenty * dpi + dy, pen);
-                        else {
-                            if (widthisbigger) graphicsscene->addLine(currentx * dpi, currenty * dpi * scale + dy, value[1] * dpi, currenty * dpi * scale + dy, pen);
-                            else graphicsscene->addLine(currentx * scale * dpi, currenty * dpi + dy, value[1] * dpi, currenty * scale * dpi + dy, pen);
-                        }
+                        graphicsscene->addLine(currentx * mainScale * scaleX + dx, currenty * mainScale * scaleY + dy, value[1] * mainScale * scaleX + dx, currenty * mainScale * scaleY + dy, pen);
                     }
                     currentx = value[1];
                 }
@@ -415,11 +439,7 @@ void    MainWindow::previewRender(QString gcode, QGraphicsScene* graphicsscene, 
                 //Если была указана ось Y
                 if (exist[2]) {
                     if (currentz == z_min) {
-                        if (!scaling) graphicsscene->addLine(currentx * dpi, currenty * dpi + dy, currentx * dpi, value[2] * dpi + dy, pen);
-                        else {
-                            if (widthisbigger) graphicsscene->addLine(currentx * dpi, currenty * dpi * scale + dy, currentx * dpi, value[2] * dpi * scale + dy, pen);
-                            else graphicsscene->addLine(currentx * scale * dpi, currenty * dpi * scale + dy, currentx * scale * dpi, value[2] * dpi * scale + dy, pen);
-                        }
+                        graphicsscene->addLine(currentx * mainScale * scaleX + dx, currenty * mainScale * scaleY + dy, currentx * mainScale * scaleX + dx, value[2] * mainScale * scaleY + dy, pen);
                     }
                     currenty = value[2];
                 }
@@ -451,7 +471,7 @@ void MainWindow::preview_update_timer() {
     //Если изменились размеры сцены
     if (sceneLastWidth != ui->graphicsView->width() || sceneLastHeight != ui->graphicsView->height()) {
         //Обновляем размеры графической сцены
-        scene->setSceneRect(-3, -3, ui->graphicsView->width() - 6, ui->graphicsView->height() - 6);
+        scene->setSceneRect(0, 0, ui->graphicsView->width(), ui->graphicsView->height());
 
         //Обновляем цвет пера
         *penColor        = QTextEdit().palette().color(QPalette::WindowText);
@@ -578,7 +598,7 @@ void MainWindow::data_exchange_timer() {
     *penColorLight   = QTextEdit().palette().color(QPalette::Highlight);
 
     //Обновляем размеры графической сцены
-    scene->setSceneRect(-3, -3, ui->graphicsView->width() - 6, ui->graphicsView->height() - 6);
+    scene->setSceneRect(0, 0, ui->graphicsView->width(), ui->graphicsView->height());
 
     //Показываем картинку
     previewRender(g_code->getString(), scene, xsteps + 1, ysteps + 1, previewscaling, i);
@@ -698,7 +718,7 @@ void MainWindow::on_gcode_edit_textChanged()
     QString str = ui->gcode_edit->toPlainText();
 
     //Обновляем размеры графической сцены
-    scene->setSceneRect(-3, -3, ui->graphicsView->width() - 6, ui->graphicsView->height() - 6);
+    scene->setSceneRect(0, 0, ui->graphicsView->width(), ui->graphicsView->height());
 
     //Подсчитываем количество строк
     int numofcom = 0;
@@ -763,15 +783,21 @@ void MainWindow::settingsRead() {
         }
         else if (config->parameter(i) == "timeout") timeout = config->value(i).toInt();
         else if (config->parameter(i) == "answer") answer = config->value(i);
+        else if (config->parameter(i) == "tablewidth") tableWidth = config->value(i).toInt();
+        else if (config->parameter(i) == "tableheight") tableHeight = config->value(i).toInt();
     }
 }
 
 void MainWindow::on_penSize_valueChanged(int value)
 {
-    ui->penValue->setText(QString::number(value));
+    if (value == 0) {
+        ui->penValue->setText("автоматический");
+    } else {
+        ui->penValue->setText(QString::number(value));
+    }
 
     //Обновляем размеры графической сцены
-    scene->setSceneRect(-3, -3, ui->graphicsView->width() - 6, ui->graphicsView->height() - 6);
+    scene->setSceneRect(0, 0, ui->graphicsView->width(), ui->graphicsView->height());
 
     //Обновляем цвет пера
     *penColor        = QTextEdit().palette().color(QPalette::WindowText);

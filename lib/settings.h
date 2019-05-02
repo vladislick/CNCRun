@@ -23,6 +23,8 @@ private slots:
 
     void on_pushButton_clicked();
 
+    void on_spinBoxTimeout_valueChanged(int arg1);
+
 private:
     Ui::Settings    *ui;
     Config          *config;
