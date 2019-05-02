@@ -390,7 +390,7 @@ p, li { white-space: pre-wrap; }
           </property>
           <property name="maximumSize">
            <size>
-            <width>70</width>
+            <width>16777215</width>
             <height>16777215</height>
            </size>
           </property>
@@ -472,7 +472,7 @@ p, li { white-space: pre-wrap; }
        <enum>Qt::Horizontal</enum>
       </property>
       <property name="handleWidth">
-       <number>4</number>
+       <number>6</number>
       </property>
       <property name="childrenCollapsible">
        <bool>false</bool>
