@@ -1,11 +1,11 @@
 # CNCRun
 Qt Application for control homemade CNC
 
-KDE Plasma look
+### KDE Plasma look
 ![project image 1](https://github.com/vladislick/cnc_run_qt/raw/master/images/kde_look_2.png)
-Windows look
+### Windows look
 ![project image 2](https://github.com/vladislick/cnc_run_qt/raw/master/images/windows_look.png)
-Linux Mint "About" menu
+### Linux Mint "About" menu
 ![project image 3](https://github.com/vladislick/cnc_run_qt/raw/master/images/mint_about.png)
 
 ### Download
