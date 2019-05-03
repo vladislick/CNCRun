@@ -1,5 +1,5 @@
 # CNCRun
-Qt Application for control homemade CNC
+Qt Application for control homemade drawing machine
 
 ### KDE Plasma
 ![project image 1](https://github.com/vladislick/cnc_run_qt/raw/master/images/kde_look_2.png)
