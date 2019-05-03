@@ -6,7 +6,7 @@
 #include <QGraphicsView>
 #include <QGraphicsScene>
 
-#define APPVERSION "1.3"
+#define APPVERSION "1.3.1"
 
 namespace Ui {
 class AboutApp;

@@ -119,6 +119,7 @@ private:
     bool    dirchange;
     int     timeout;
     QString answer;
+    QString imagePath;
     double  tableWidth;
     double  tableHeight;
 };

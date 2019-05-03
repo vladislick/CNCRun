@@ -32,9 +32,6 @@ MainWindow::MainWindow(QWidget *parent) :
     comPort->setFlowControl(QSerialPort::NoFlowControl);
     comPort->setDataBits(QSerialPort::Data8);
 
-    /* Читаем конфигурацию */
-    settingsRead();
-
     /* Подключаем сигналы и слоты */
     connect(ioTimer, SIGNAL(timeout()), this, SLOT(io_update_timer()));
     connect(mainTimer, SIGNAL(timeout()), this, SLOT(data_exchange_timer()));
@@ -45,6 +42,7 @@ MainWindow::MainWindow(QWidget *parent) :
     previewTimer->start(PREVIEW_TIMER_DELAY);
 
     ui->graphicsView->setScene(scene);
+    imagePath.clear();
 
     /* Выполняем начальный функционал */
     consoleWrite("******** WELCOME TO CNCRUN ********", ui->console);
@@ -311,6 +309,7 @@ void MainWindow::uiUpdate() {
     ui->button_home->setEnabled(isActive);
     ui->console_line->setEnabled(isActive);
     ui->button_send->setEnabled(isActive);
+    ui->label->setEnabled(comPort->isOpen());
     ui->gcode_edit->setReadOnly(projectWorking);
     ui->progressBar->setEnabled(projectWorking);
 
@@ -332,6 +331,10 @@ void MainWindow::uiUpdate() {
 
 ///Рисует картинку предпросмотра
 void    MainWindow::previewRender(QString gcode, QGraphicsScene* graphicsscene, int width, int height, bool scaling = 0, int line_exec = 0) {
+
+    //Обновляем цвет пера
+    *penColor        = QTextEdit().palette().color(QPalette::WindowText);
+    *penColorLight   = QTextEdit().palette().color(QPalette::Highlight);
 
     /* Адаптивный режим просмотра */
     double scaleX = 1, scaleY = 1;
@@ -462,20 +465,29 @@ void MainWindow::on_button_clear_clicked()
 }
 
 void MainWindow::preview_update_timer() {
-    if (projectWorking) return; //Если проект запущен, то картинка и так перерисовывается автоматически
 
-    //Создаём переменные для запоминания предыдущих размеров сцены
+    /* Создаём переменные для запоминания предыдущих размеров сцены */
     static int sceneLastWidth = 0;
     static int sceneLastHeight = 0;
 
+    //Предыдущий цвет пера
+    static QColor penColorLast = *penColor;
+
+    static bool afterJob = 0;
+
+    if (projectWorking) {
+        afterJob = 1;
+        return; //Если проект запущен, то картинка и так перерисовывается автоматически
+    }
+
+    //Обновляем цвет пера
+    *penColor = QTextEdit().palette().color(QPalette::WindowText);
+
     //Если изменились размеры сцены
-    if (sceneLastWidth != ui->graphicsView->width() || sceneLastHeight != ui->graphicsView->height()) {
+    if (sceneLastWidth != ui->graphicsView->width() || sceneLastHeight != ui->graphicsView->height() || penColorLast != *penColor || afterJob) {
+
         //Обновляем размеры графической сцены
         scene->setSceneRect(0, 0, ui->graphicsView->width(), ui->graphicsView->height());
-
-        //Обновляем цвет пера
-        *penColor        = QTextEdit().palette().color(QPalette::WindowText);
-        *penColorLight   = QTextEdit().palette().color(QPalette::Highlight);
 
         //Копируем текст G-code
         QString str = ui->gcode_edit->toPlainText();
@@ -483,14 +495,36 @@ void MainWindow::preview_update_timer() {
         //Показываем картинку
         previewRender(str, scene, xsteps + 1, ysteps + 1, previewscaling);
 
+        //Обновляем цвет
+        penColorLast = *penColor;
+
         //Запоминаем размеры
         sceneLastWidth  = ui->graphicsView->width();
         sceneLastHeight = ui->graphicsView->height();
+
+        afterJob = 0;
     }
 
 }
 
 void MainWindow::io_update_timer() {
+    //Предыдущий цвет пера
+    static QColor penColorLast = *penColor;
+
+    //Меняем цвет иконок
+    if (penColorLast != *penColor) {
+        penColorLast = *penColor;
+        if (penColor->red() + penColor->green() + penColor->blue() > 300) {
+            ui->action_open->setIcon(QIcon("icons/openfile_white.png"));
+            ui->action_settings->setIcon(QIcon("icons/settings_white.png"));
+            ui->action_about->setIcon(QIcon("icons/about_white.png"));
+        } else {
+            ui->action_open->setIcon(QIcon("icons/openfile_black.png"));
+            ui->action_settings->setIcon(QIcon("icons/settings_black.png"));
+            ui->action_about->setIcon(QIcon("icons/about_black.png"));
+        }
+    }
+
     if (projectWorking) return;
 
     static int ports = 0;
@@ -519,6 +553,7 @@ void MainWindow::io_update_timer() {
         if (comPort->isOpen() && !portExist) {
             consoleWrite("Connection LOST [SYSTEM]", ui->console);
             comPort->close();
+            uiUpdate();
         }
 
         if (ports > 0) consoleWrite(str, ui->console);
@@ -527,10 +562,28 @@ void MainWindow::io_update_timer() {
     if (comPort->isOpen()) {
         ui->button_com->setText("Отключить");
         ui->comboBox->setEnabled(0);
+        ui->label_2->setEnabled(0);
     } else {
-        settingsRead();
         ui->button_com->setText("Подключить");
         ui->comboBox->setEnabled(1);
+        ui->label_2->setEnabled(1);
+    }
+
+    settingsRead();
+
+
+    /* Если изменились параметры образования G-code */
+    static bool xisgeneralLast      = xisgeneral;
+    static int  step_fillingLast    = step_filling;
+    static bool changeaxisLast      = changeaxis;
+    static bool dirchangeLast       = dirchange;
+
+    if (xisgeneralLast != xisgeneral || step_fillingLast != step_filling || changeaxisLast != changeaxis || dirchangeLast != dirchange) {
+        if (!imagePath.isEmpty()) fileOpen(imagePath);
+        xisgeneralLast      = xisgeneral;
+        step_fillingLast    = step_filling;
+        changeaxisLast      = changeaxis;
+        dirchangeLast       = dirchange;
     }
 
     /* Выводим информацию о текущей настройке порта */
@@ -672,7 +725,10 @@ void MainWindow::on_action_open_triggered()
 
     QFileDialog fileDialog;
     QString str = fileDialog.getOpenFileName(this, tr("Открыть"), "", tr("Изображение или G-code (*.jpg *.png *.txt)"));
-    if (str.size() != 0) fileOpen(str);
+    if (str.size() != 0) {
+        fileOpen(str);
+        imagePath = str;
+    }
 }
 
 void MainWindow::on_button_home_clicked()
@@ -736,20 +792,35 @@ void MainWindow::on_checkBox_stateChanged(int arg)
 }
 
 void MainWindow::settingsRead() {
+    static bool isOpened = 0;
+
+    if (isOpened) return;
+
     /* Проверяем, есть ли файл конфигурации */
     if (!config->isexist()) {
 
         //Пишем и оповещаем о том, что отсутствует файл конфигурации
         consoleWrite("No configuration file [SYSTEM]", ui->console);
         config->make("");
-        consoleWrite("Configuration file created automatically [SYSTEM]", ui->console);
-        QMessageBox box(QMessageBox::Information, "Не найден файл конфигурации", "Не удалось обнаружить файл конфигурации!\nАвтоматически создан пустой файл конфигурации.\nПожалуйста, укажите параметры вашего оборудования");
-        box.exec();
+        isOpened = 1;
+        if (config->isexist()) {
+            consoleWrite("Configuration file created automatically [SYSTEM]", ui->console);
+            QMessageBox box(QMessageBox::Information, "Не найден файл конфигурации", "Не удалось обнаружить файл конфигурации!\nАвтоматически создан пустой файл конфигурации.\nПожалуйста, укажите параметры вашего оборудования");
+            box.exec();
 
-        //Открываем настройки
-        Settings settings;
-        settings.setModal(true);
-        settings.exec();
+            //Открываем настройки
+            Settings settings;
+            settings.setModal(true);
+            settings.exec();
+            isOpened = 0;
+        } else {
+            consoleWrite("Cannot create a configuration file [SYSTEM]", ui->console);
+            QMessageBox box(QMessageBox::Critical, "Не удалось создать файл конфигурации", "Не удалось обнаружить файл конфигурации!\nНе удалось создать файл автоматически. Проверьте права доступа.");
+            box.exec();
+            isOpened = 0;
+            this->close();
+            return;
+        }
     }
     config->read();
 
